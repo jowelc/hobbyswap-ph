@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
+import AppImage from './AppImage';
 import { Item } from '@/types/item';
 import { InventoryItem } from '@/types/inventoryItem';
 import { formatCurrency } from '@/lib/utils';
@@ -55,7 +55,7 @@ function CardThumb({
           : 'border-slate-700 hover:border-slate-500 cursor-pointer'
       }`}
     >
-      <Image
+      <AppImage
         src={card.frontImageUrl || '/card-placeholder-front.svg'}
         alt={card.name}
         fill
@@ -320,7 +320,7 @@ export default function TradeOfferModal({ targetItem, targetUserId, targetUserna
                     <div className="flex -space-x-3">
                       {theirSelected.slice(0, 3).map((c) => (
                         <div key={c.id} className="relative rounded-lg overflow-hidden border border-slate-600 bg-slate-800" style={{ width: 36, aspectRatio: '5/7' }}>
-                          <Image src={c.frontImageUrl || '/card-placeholder-front.svg'} alt={c.name} fill className="object-contain" unoptimized />
+                          <AppImage src={c.frontImageUrl || '/card-placeholder-front.svg'} alt={c.name} fill className="object-contain" unoptimized />
                         </div>
                       ))}
                       {theirSelected.length > 3 && (
@@ -354,7 +354,7 @@ export default function TradeOfferModal({ targetItem, targetUserId, targetUserna
                     <div className="flex -space-x-3">
                       {mySelected.slice(0, 3).map((c) => (
                         <div key={c.id} className="relative rounded-lg overflow-hidden border border-slate-600 bg-slate-800" style={{ width: 36, aspectRatio: '5/7' }}>
-                          <Image src={c.frontImageUrl || '/card-placeholder-front.svg'} alt={c.name} fill className="object-contain" unoptimized />
+                          <AppImage src={c.frontImageUrl || '/card-placeholder-front.svg'} alt={c.name} fill className="object-contain" unoptimized />
                         </div>
                       ))}
                       {mySelected.length > 3 && (

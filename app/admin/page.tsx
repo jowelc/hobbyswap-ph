@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import Image from 'next/image';
+import AppImage from '@/components/AppImage';
 import Link from 'next/link';
 import { auth } from '@/auth';
 import { SUPERADMIN_EMAIL } from '@/lib/constants';
@@ -8,6 +9,9 @@ import { users as usersTable, whitelist as whitelistTable } from '@/db/schema';
 import type { DbUser, DbWhitelist } from '@/db/schema';
 import Logo from '@/components/Logo';
 import AddToWhitelistForm from './AddToWhitelistForm';
+import DeleteWhitelistButton from './DeleteWhitelistButton';
+import SetTierButton from './SetTierButton';
+import SignOutButton from './SignOutButton';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -64,7 +68,8 @@ export default async function AdminPage() {
   const whitelistedUsers = allUsers
     .filter((u) => u.isWhitelisted)
     .sort((a, b) => (b.lastLoginAt?.getTime() ?? 0) - (a.lastLoginAt?.getTime() ?? 0));
-  const activeCount     = allUsers.filter((u) => u.isActive).length;
+  const verifiedCount   = allUsers.filter((u) => u.isWhitelisted && u.tier !== 'premium').length;
+  const premiumCount    = allUsers.filter((u) => u.tier === 'premium').length;
 
   const registeredEmails = new Set(allUsers.map((u) => u.email));
   const pendingEntries: DbWhitelist[] = whitelistEntries.filter((e) => !registeredEmails.has(e.email));
@@ -98,8 +103,8 @@ export default async function AdminPage() {
             </Link>
             <div className="flex items-center gap-2 bg-slate-800 rounded-xl px-3 py-1.5 border border-slate-700">
               {session.user?.image ? (
-                <div className="relative w-6 h-6 rounded-full overflow-hidden">
-                  <Image src={session.user.image} alt="avatar" fill className="object-cover" unoptimized />
+                <div className="relative w-6 h-6 rounded-full overflow-hidden bg-slate-700">
+                  <AppImage src={session.user.image} alt="avatar" fill className="object-cover" unoptimized />
                 </div>
               ) : (
                 <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs">
@@ -110,6 +115,7 @@ export default async function AdminPage() {
                 {session.user?.name?.split(' ')[0]}
               </span>
             </div>
+            <SignOutButton />
           </div>
         </div>
       </header>
@@ -124,10 +130,10 @@ export default async function AdminPage() {
 
         {/* ─── Stats ───────────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Registered Users"   value={totalUsers}                         sub="All time"                   color="border-blue-500/20" />
-          <StatCard label="Whitelisted"         value={whitelistedUsers.length}            sub="Approved traders"           color="border-green-500/20" />
-          <StatCard label="Active"              value={activeCount}                        sub="Signed in at least once"    color="border-yellow-500/20" />
-          <StatCard label="Pending Invites"     value={pendingEntries.length}              sub="Invited, not signed up yet" color="border-purple-500/20" />
+          <StatCard label="Registered Users" value={totalUsers}          sub="All time"                   color="border-blue-500/20" />
+          <StatCard label="Verified Users"   value={verifiedCount}       sub="Standard approved traders"  color="border-emerald-500/20" />
+          <StatCard label="Premium Users"    value={premiumCount}        sub="Upgraded traders"           color="border-amber-500/20" />
+          <StatCard label="Pending Invites"  value={pendingEntries.length} sub="Invited, not signed up yet" color="border-purple-500/20" />
         </div>
 
         {/* ─── Whitelisted Users ───────────────────────────────────────── */}
@@ -140,11 +146,13 @@ export default async function AdminPage() {
           </div>
 
           <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
-            <div className="hidden md:grid grid-cols-[2fr_2fr_1.8fr_1fr] gap-4 px-5 py-3 border-b border-slate-800 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+            <div className="hidden md:grid grid-cols-[2fr_2fr_1.8fr_1fr_auto_auto] gap-4 px-5 py-3 border-b border-slate-800 text-xs font-semibold text-slate-500 uppercase tracking-wide">
               <span>Trader</span>
               <span>Email</span>
               <span>Status</span>
               <span>Joined</span>
+              <span>Tier</span>
+              <span></span>
             </div>
 
             {whitelistRows.length === 0 && (
@@ -154,7 +162,7 @@ export default async function AdminPage() {
             {whitelistRows.map((row, idx) => (
               <div
                 key={row.kind === 'user' ? row.data.id : row.email}
-                className={`flex flex-col md:grid md:grid-cols-[2fr_2fr_1.8fr_1fr] gap-2 md:gap-4 px-5 py-4 items-start md:items-center ${
+                className={`flex flex-col md:grid md:grid-cols-[2fr_2fr_1.8fr_1fr_auto_auto] gap-2 md:gap-4 px-5 py-4 items-start md:items-center ${
                   idx !== whitelistRows.length - 1 ? 'border-b border-slate-800/60' : ''
                 } hover:bg-slate-800/30 transition-colors`}
               >
@@ -163,7 +171,7 @@ export default async function AdminPage() {
                   <div className="flex items-center gap-3">
                     <div className="relative w-9 h-9 rounded-full overflow-hidden bg-slate-700 flex-shrink-0">
                       {row.data.avatarUrl ? (
-                        <Image src={row.data.avatarUrl} alt={row.data.displayName} fill className="object-cover" unoptimized />
+                        <AppImage src={row.data.avatarUrl} alt={row.data.displayName} fill className="object-cover" unoptimized />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-white font-bold text-sm bg-gradient-to-br from-blue-500 to-purple-600">
                           {row.data.displayName[0]?.toUpperCase() ?? '?'}
@@ -223,6 +231,22 @@ export default async function AdminPage() {
                     ? formatDateTime(row.data.createdAt)
                     : formatDateTime(row.addedAt)}
                 </span>
+
+                {/* Tier */}
+                <div className="flex items-center">
+                  {row.kind === 'user' ? (
+                    <SetTierButton userId={row.data.id} currentTier={row.data.tier} />
+                  ) : (
+                    <span className="text-xs text-slate-600">—</span>
+                  )}
+                </div>
+
+                {/* Delete */}
+                <div className="flex items-center">
+                  <DeleteWhitelistButton
+                    email={row.kind === 'user' ? row.data.email : row.email}
+                  />
+                </div>
               </div>
             ))}
           </div>
@@ -259,7 +283,7 @@ export default async function AdminPage() {
                   <div className="flex items-center gap-3">
                     <div className="relative w-9 h-9 rounded-full overflow-hidden bg-slate-700 flex-shrink-0">
                       {user.avatarUrl ? (
-                        <Image src={user.avatarUrl} alt={user.displayName} fill className="object-cover" unoptimized />
+                        <AppImage src={user.avatarUrl} alt={user.displayName} fill className="object-cover" unoptimized />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-white font-bold text-sm bg-gradient-to-br from-blue-500 to-purple-600">
                           {user.displayName[0]?.toUpperCase() ?? '?'}

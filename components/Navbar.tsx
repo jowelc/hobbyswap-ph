@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
+import AppImage from './AppImage';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
@@ -37,10 +37,7 @@ export default function Navbar({ search = '', onSearchChange, showSearch = true 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [locationGateOpen, setLocationGateOpen] = useState(false);
   const [postLocation, setPostLocation] = useState<Location | null>(null);
-  const [avatarLoaded, setAvatarLoaded] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-
-  const handleAvatarLoad = useCallback(() => setAvatarLoaded(true), []);
 
   const email = session?.user?.email ?? null;
 
@@ -155,19 +152,13 @@ export default function Navbar({ search = '', onSearchChange, showSearch = true 
                   >
                     <div className="relative w-8 h-8 rounded-full overflow-hidden bg-slate-700 flex-shrink-0 ring-2 ring-blue-500/40">
                       {session.user?.image ? (
-                        <>
-                          {!avatarLoaded && (
-                            <div className="absolute inset-0 bg-slate-600 animate-pulse rounded-full" />
-                          )}
-                          <Image
-                            src={session.user.image}
-                            alt={session.user.name ?? 'User'}
-                            fill
-                            className={`object-cover transition-opacity duration-300 ${avatarLoaded ? 'opacity-100' : 'opacity-0'}`}
-                            onLoad={handleAvatarLoad}
-                            unoptimized
-                          />
-                        </>
+                        <AppImage
+                          src={session.user.image}
+                          alt={session.user.name ?? 'User'}
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-white font-bold text-sm bg-gradient-to-br from-blue-500 to-purple-600">
                           {(session.user?.name ?? session.user?.email ?? 'U')[0].toUpperCase()}

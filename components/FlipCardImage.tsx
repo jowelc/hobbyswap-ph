@@ -20,6 +20,7 @@ export default function FlipCardImage({
   aspectRatio = 'card',
 }: Props) {
   const [showBack, setShowBack] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
   const [frontError, setFrontError] = useState(false);
   const [backError, setBackError] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -49,16 +50,20 @@ export default function FlipCardImage({
     <>
       <div
         className={`relative ${aspect} w-full overflow-hidden rounded-xl group cursor-zoom-in select-none ${className}`}
-        onMouseEnter={() => setShowBack(true)}
-        onMouseLeave={() => setShowBack(false)}
+        onMouseEnter={() => { setShowBack(true); setImgLoaded(false); }}
+        onMouseLeave={() => { setShowBack(false); setImgLoaded(false); }}
         onClick={openLightbox}
       >
+        {!imgLoaded && (
+          <div className="absolute inset-0 bg-slate-700 animate-pulse" />
+        )}
         <Image
           src={currentUrl}
           alt={showBack ? `${alt} - Back` : alt}
           fill
-          className="object-cover transition-all duration-300"
-          onError={() => showBack ? setBackError(true) : setFrontError(true)}
+          className={`object-cover transition-all duration-300 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
+          onLoad={() => setImgLoaded(true)}
+          onError={() => { showBack ? setBackError(true) : setFrontError(true); setImgLoaded(true); }}
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           unoptimized
         />

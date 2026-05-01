@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import Image from 'next/image';
+import AppImage from './AppImage';
 import { User } from '@/types/user';
 import RatingStars from './RatingStars';
 import TrustBadge from './TrustBadge';
+import TierBadge from './TierBadge';
 import { formatMemberSince } from '@/lib/utils';
 
 interface Props {
@@ -12,45 +12,35 @@ interface Props {
 }
 
 export default function UserProfileHeader({ user }: Props) {
-  const [avatarLoaded, setAvatarLoaded] = useState(false);
-
   return (
     <div className="bg-slate-800/50 rounded-2xl border border-slate-700/50 p-6">
       <div className="flex flex-col sm:flex-row gap-5">
         {/* Avatar */}
         <div className="relative flex-shrink-0">
           <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden bg-slate-700 relative">
-            {!avatarLoaded && (
-              <div className="absolute inset-0 bg-slate-600 animate-pulse" />
-            )}
-            <Image
+            <AppImage
               src={user.avatarUrl}
               alt={user.displayName}
               fill
-              className={`object-cover transition-opacity duration-300 ${avatarLoaded ? 'opacity-100' : 'opacity-0'}`}
-              onLoad={() => setAvatarLoaded(true)}
+              className="object-cover"
               unoptimized
             />
           </div>
-          {user.isVerified && (
-            <div
-              className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold border-2 border-slate-800"
-              title="Verified Trader"
-            >
-              ✓
-            </div>
-          )}
+          <div
+            className={`absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold border-2 border-slate-800 ${
+              user.tier === 'premium' ? 'bg-amber-500' : 'bg-emerald-500'
+            }`}
+            title={user.tier === 'premium' ? 'Premium Trader' : 'Verified Trader'}
+          >
+            {user.tier === 'premium' ? '★' : '✓'}
+          </div>
         </div>
 
         {/* Info */}
         <div className="flex-1 min-w-0 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-xl font-bold text-white">{user.displayName}</h1>
-            {user.isVerified && (
-              <span className="text-xs bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded-full font-semibold">
-                Verified
-              </span>
-            )}
+            <TierBadge tier={user.tier} />
             <TrustBadge level={user.trustLevel} />
           </div>
 

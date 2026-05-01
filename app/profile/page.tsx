@@ -1,6 +1,10 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
-import { isAdmin, isWhitelisted, WHITELISTED_USERS } from '@/lib/constants';
+import { isAdmin } from '@/lib/constants';
+import { isWhitelisted } from '@/lib/auth-utils';
+import { db } from '@/db';
+import { users } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 import ProfileClient from './ProfileClient';
 
 export default async function ProfilePage() {
@@ -9,20 +13,20 @@ export default async function ProfilePage() {
 
   if (!email) redirect('/login');
   if (isAdmin(email)) redirect('/admin');
-  if (!isWhitelisted(email)) redirect(`/access-denied?email=${encodeURIComponent(email)}`);
+  if (!await isWhitelisted(email)) redirect(`/access-denied?email=${encodeURIComponent(email)}`);
 
-  const userInfo = WHITELISTED_USERS[email] ?? {
-    username: email.split('@')[0],
-    displayName: session?.user?.name ?? email.split('@')[0],
-  };
+  const [dbUser] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+
+  const tier = (dbUser?.tier === 'premium' ? 'premium' : 'verified') as 'verified' | 'premium';
 
   return (
     <ProfileClient
       email={email}
-      name={session?.user?.name ?? userInfo.displayName}
+      name={session?.user?.name ?? dbUser?.displayName ?? email.split('@')[0]}
       image={session?.user?.image ?? null}
-      username={userInfo.username}
-      displayName={userInfo.displayName}
+      username={dbUser?.username ?? email.split('@')[0]}
+      displayName={dbUser?.displayName ?? session?.user?.name ?? email.split('@')[0]}
+      tier={tier}
     />
   );
 }

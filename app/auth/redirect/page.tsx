@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
-import { isAdmin, isWhitelisted } from '@/lib/constants';
+import { isAdmin } from '@/lib/constants';
+import { isWhitelisted } from '@/lib/auth-utils';
 
 // Server component — runs after every OAuth callback, routes to the right destination.
 export default async function AuthRedirectPage() {

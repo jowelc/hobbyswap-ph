@@ -24,6 +24,7 @@ interface ApiResponse {
     displayName: string;
     avatarUrl: string;
     email: string;
+    tier: string;
     isWhitelisted: boolean;
     isActive: boolean;
     lastLoginAt: string | null;
@@ -42,7 +43,7 @@ function toUserShape(u: ApiResponse['user']): User {
     bio:              (u as Record<string, unknown>).bio as string || '',
     location:         (u as Record<string, unknown>).location as string || 'Philippines',
     lookingFor:       (u as Record<string, unknown>).lookingFor as string || 'No preference',
-    isVerified:       false,
+    tier:             (u.tier === 'premium' ? 'premium' : 'verified') as 'verified' | 'premium',
     isWhitelisted:    u.isWhitelisted,
     isActive:         u.isActive,
     rating:           0,
@@ -173,7 +174,7 @@ export default function UserPage({ params }: PageProps) {
               ownerUsername={user.username}
               ownerAvatar={user.avatarUrl}
               ownerLookingFor={user.lookingFor}
-              isVerified={user.isVerified}
+              tier={user.tier}
               isOwner={session?.user?.email === user.email}
             />
           </div>

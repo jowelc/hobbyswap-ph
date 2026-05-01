@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import Image from 'next/image';
+import AppImage from './AppImage';
 import ProfileCompletionModal, { ProfileFields, parsePaymentMethods } from './ProfileCompletionModal';
 
 interface WatchlistItem {
@@ -173,7 +173,7 @@ export default function NotificationBell() {
               <div key={w.itemId} className="flex items-start gap-3 px-4 py-3 bg-red-500/5 border-b border-red-500/10">
                 <div className="relative w-8 h-8 rounded-lg overflow-hidden bg-slate-700 flex-shrink-0 mt-0.5">
                   {w.frontImageUrl ? (
-                    <Image src={w.frontImageUrl} alt={w.name} fill className="object-cover" unoptimized />
+                    <AppImage src={w.frontImageUrl} alt={w.name} fill className="object-cover" unoptimized />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">📦</div>
                   )}
@@ -201,7 +201,7 @@ export default function NotificationBell() {
                   <div className="flex gap-3 items-start">
                     <div className="relative w-9 h-9 rounded-full overflow-hidden bg-slate-700 flex-shrink-0">
                       {offer.fromAvatar ? (
-                        <Image src={offer.fromAvatar} alt={offer.fromDisplayName} fill className="object-cover" unoptimized />
+                        <AppImage src={offer.fromAvatar} alt={offer.fromDisplayName} fill className="object-cover" unoptimized />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-white font-bold text-sm bg-gradient-to-br from-blue-500 to-purple-600">
                           {(offer.fromDisplayName || offer.fromUsername)[0]?.toUpperCase()}

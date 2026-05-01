@@ -19,7 +19,7 @@ export interface User {
   bio: string;
   location: string;
   lookingFor: string;
-  isVerified: boolean;
+  tier: 'verified' | 'premium';
   isWhitelisted: boolean;
   isActive: boolean;
   rating: number;

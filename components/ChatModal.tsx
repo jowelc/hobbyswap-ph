@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import Image from 'next/image';
+import AppImage from './AppImage';
 import { useSession } from 'next-auth/react';
 
 interface ApiMessage {
@@ -84,7 +84,7 @@ export default function ChatModal({ traderUserId, traderUsername, traderAvatar, 
         {/* Header */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-800 flex-shrink-0">
           <div className="relative w-9 h-9 rounded-full overflow-hidden bg-slate-700">
-            <Image src={traderAvatar} alt={traderUsername} fill className="object-cover" unoptimized />
+            <AppImage src={traderAvatar} alt={traderUsername} fill className="object-cover" unoptimized />
           </div>
           <div>
             <p className="text-sm font-semibold text-white">@{traderUsername}</p>

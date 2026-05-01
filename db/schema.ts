@@ -10,6 +10,7 @@ export const users = pgTable('users', {
   location:       text('location').notNull().default('Philippines'),
   lookingFor:     text('looking_for').notNull().default('No preference'),
   paymentDetails: text('payment_details').notNull().default(''),
+  tier:          text('tier').notNull().default('verified'),
   isWhitelisted: boolean('is_whitelisted').notNull().default(false),
   isActive:      boolean('is_active').notNull().default(false),
   lastLoginAt:   timestamp('last_login_at', { withTimezone: true }),

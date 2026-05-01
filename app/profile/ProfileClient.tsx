@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image, { type ImageProps } from 'next/image';
 import Link from 'next/link';
 import { signOut } from 'next-auth/react';
 import Logo from '@/components/Logo';
@@ -13,6 +12,8 @@ import PostItemModal from '@/components/PostItemModal';
 import LocationGate from '@/components/LocationGate';
 import { formatCurrency, getConditionColor, getTradePrefColor } from '@/lib/utils';
 import FlipCardImage from '@/components/FlipCardImage';
+import TierBadge from '@/components/TierBadge';
+import AppImage from '@/components/AppImage';
 
 interface Props {
   email: string;
@@ -20,6 +21,7 @@ interface Props {
   image: string | null;
   username: string;
   displayName: string;
+  tier: 'verified' | 'premium';
 }
 
 interface WatchlistEntry {
@@ -44,7 +46,7 @@ interface ProfileMeta {
 
 const EMPTY_META: ProfileMeta = { bio: '', location: '', lookingFor: '', paymentDetails: '' };
 
-export default function ProfileClient({ email, name, image, username, displayName }: Props) {
+export default function ProfileClient({ email, name, image, username, displayName, tier }: Props) {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [watchlist, setWatchlist] = useState<WatchlistEntry[]>([]);
   const [meta, setMeta] = useState<ProfileMeta>(EMPTY_META);
@@ -183,8 +185,8 @@ export default function ProfileClient({ email, name, image, username, displayNam
             </Link>
             <div className="flex items-center gap-2 bg-slate-800 rounded-xl px-3 py-1.5 border border-slate-700">
               {image ? (
-                <div className="relative w-6 h-6 rounded-full overflow-hidden">
-                  <Image src={image} alt={name} fill className="object-cover" unoptimized />
+                <div className="relative w-6 h-6 rounded-full overflow-hidden bg-slate-700">
+                  <AppImage src={image} alt={name} fill className="object-cover" unoptimized />
                 </div>
               ) : (
                 <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs">
@@ -211,14 +213,21 @@ export default function ProfileClient({ email, name, image, username, displayNam
             {/* Avatar */}
             <div className="relative flex-shrink-0">
               {image ? (
-                <AvatarImage src={image} alt={name} className="w-20 h-20 rounded-2xl ring-2 ring-blue-500/30" />
+                <div className="relative w-20 h-20 rounded-2xl overflow-hidden ring-2 ring-blue-500/30 bg-slate-700">
+                  <AppImage src={image} alt={name} fill className="object-cover" unoptimized />
+                </div>
               ) : (
                 <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-black text-3xl">
                   {name[0]?.toUpperCase()}
                 </div>
               )}
-              <div className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full bg-green-500 border-2 border-slate-800 flex items-center justify-center text-white text-xs font-bold" title="Whitelisted Trader">
-                ✓
+              <div
+                className={`absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full border-2 border-slate-800 flex items-center justify-center text-white text-xs font-bold ${
+                  tier === 'premium' ? 'bg-amber-500' : 'bg-emerald-500'
+                }`}
+                title={tier === 'premium' ? 'Premium Trader' : 'Verified Trader'}
+              >
+                {tier === 'premium' ? '★' : '✓'}
               </div>
             </div>
 
@@ -226,9 +235,7 @@ export default function ProfileClient({ email, name, image, username, displayNam
             <div className="flex-1 min-w-0 space-y-2">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-xl font-black text-white">{name || displayName}</h1>
-                <span className="text-xs bg-green-500/20 text-green-300 border border-green-500/30 px-2 py-0.5 rounded-full font-semibold">
-                  Whitelisted Trader
-                </span>
+                <TierBadge tier={tier} />
               </div>
               <p className="text-sm text-slate-400">@{username} · {email}</p>
 
@@ -433,7 +440,7 @@ export default function ProfileClient({ email, name, image, username, displayNam
               {watchlist.map((w) => (
                 <div key={w.itemId} className={`relative bg-slate-800/60 border rounded-2xl overflow-hidden flex flex-col transition-all ${w.isForTrade ? 'border-slate-700/50' : 'border-red-500/30 opacity-70'}`}>
                   <a href={`/users/${w.ownerUsername}?item=${w.itemId}`} className="block relative aspect-[3/4] overflow-hidden bg-slate-800">
-                    <Image src={w.frontImageUrl || '/card-placeholder-front.svg'} alt={w.name} fill className="object-contain" unoptimized />
+                    <AppImage src={w.frontImageUrl || '/card-placeholder-front.svg'} alt={w.name} fill className="object-contain" unoptimized fallbackSrc="/card-placeholder-front.svg" />
                     {!w.isForTrade && (
                       <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                         <span className="text-xs font-bold text-red-400 bg-red-500/20 border border-red-500/30 px-2 py-1 rounded-lg">Not Available</span>
@@ -571,19 +578,3 @@ function InventoryCard({
   );
 }
 
-function AvatarImage({ src, alt, className }: { src: string; alt: string; className?: string }) {
-  const [loaded, setLoaded] = useState(false);
-  return (
-    <div className={`relative overflow-hidden bg-slate-700 ${className ?? ''}`}>
-      {!loaded && <div className="absolute inset-0 bg-slate-600 animate-pulse" />}
-      <Image
-        src={src}
-        alt={alt}
-        fill
-        className={`object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
-        onLoad={() => setLoaded(true)}
-        unoptimized
-      />
-    </div>
-  );
-}

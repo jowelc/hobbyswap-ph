@@ -14,11 +14,11 @@ interface Props {
   ownerUsername: string;
   ownerAvatar: string;
   ownerLookingFor?: string;
-  isVerified: boolean;
+  tier?: string;
   isOwner?: boolean;
 }
 
-export default function HighlightedItem({ item, ownerUserId, ownerUsername, ownerAvatar, ownerLookingFor, isVerified, isOwner = false }: Props) {
+export default function HighlightedItem({ item, ownerUserId, ownerUsername, ownerAvatar, ownerLookingFor, tier, isOwner = false }: Props) {
   const [showBack, setShowBack] = useState(false);
   const [tradeModalOpen, setTradeModalOpen] = useState(false);
   const [chatModalOpen, setChatModalOpen] = useState(false);

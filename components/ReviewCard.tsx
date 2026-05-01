@@ -1,6 +1,6 @@
 'use client';
 
-import Image from 'next/image';
+import AppImage from './AppImage';
 import { Review } from '@/types/user';
 import RatingStars from './RatingStars';
 import { formatDate } from '@/lib/utils';
@@ -14,7 +14,7 @@ export default function ReviewCard({ review }: Props) {
     <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
       <div className="flex items-start gap-3">
         <div className="relative w-9 h-9 rounded-full overflow-hidden flex-shrink-0 bg-slate-700">
-          <Image
+          <AppImage
             src={review.reviewerAvatar}
             alt={review.reviewerUsername}
             fill

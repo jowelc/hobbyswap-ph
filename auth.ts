@@ -2,7 +2,8 @@ import NextAuth from 'next-auth';
 import Google from 'next-auth/providers/google';
 import Facebook from 'next-auth/providers/facebook';
 import { eq } from 'drizzle-orm';
-import { SUPERADMIN_EMAIL, isWhitelisted, isAdmin } from '@/lib/constants';
+import { SUPERADMIN_EMAIL, isAdmin } from '@/lib/constants';
+import { isWhitelisted } from '@/lib/auth-utils';
 import { db } from '@/db';
 import { users } from '@/db/schema';
 
@@ -21,9 +22,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     signIn: '/login',
   },
   callbacks: {
-    signIn({ user }) {
+    async signIn({ user }) {
       const email = user.email ?? '';
-      if (!isWhitelisted(email)) {
+      if (!await isWhitelisted(email)) {
         return `/access-denied?email=${encodeURIComponent(email)}`;
       }
       return true;
@@ -42,7 +43,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           if (existing.length) {
             await db
               .update(users)
-              .set({ lastLoginAt: new Date(), isActive: true })
+              .set({ lastLoginAt: new Date(), isActive: true, isWhitelisted: await isWhitelisted(user.email) })
               .where(eq(users.email, user.email));
             token.userId = existing[0].id;
           } else {
@@ -56,7 +57,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 username,
                 displayName:   user.name ?? '',
                 avatarUrl:     user.image ?? '',
-                isWhitelisted: isWhitelisted(user.email),
+                isWhitelisted: await isWhitelisted(user.email),
                 isActive:      true,
                 lastLoginAt:   new Date(),
               })
