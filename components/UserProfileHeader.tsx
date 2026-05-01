@@ -5,6 +5,7 @@ import { User } from '@/types/user';
 import RatingStars from './RatingStars';
 import TrustBadge from './TrustBadge';
 import TierBadge from './TierBadge';
+import { isAdmin } from '@/lib/constants';
 import { formatMemberSince } from '@/lib/utils';
 
 interface Props {
@@ -40,6 +41,11 @@ export default function UserProfileHeader({ user }: Props) {
         <div className="flex-1 min-w-0 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-xl font-bold text-white">{user.displayName}</h1>
+            {isAdmin(user.email) && (
+              <span className="text-xs bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-full font-semibold">
+                🛡️ Admin
+              </span>
+            )}
             <TierBadge tier={user.tier} />
             <TrustBadge level={user.trustLevel} />
           </div>

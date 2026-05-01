@@ -12,9 +12,9 @@ export type Condition = 'Raw' | 'Graded' | 'Sealed' | 'Used' | 'Brand New';
 
 export type TradePreference =
   | 'Trade Only'
+  | 'Cash Only'
   | 'Trade + Cash'
-  | 'Cash Difference Accepted'
-  | 'Open to Offers';
+  | 'Open to any offers';
 
 export type Location =
   | 'Pampanga'

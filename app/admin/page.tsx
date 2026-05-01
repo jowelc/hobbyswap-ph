@@ -1,17 +1,17 @@
 import { redirect } from 'next/navigation';
-import Image from 'next/image';
 import AppImage from '@/components/AppImage';
 import Link from 'next/link';
 import { auth } from '@/auth';
 import { SUPERADMIN_EMAIL } from '@/lib/constants';
 import { db } from '@/db';
-import { users as usersTable, whitelist as whitelistTable } from '@/db/schema';
-import type { DbUser, DbWhitelist } from '@/db/schema';
+import { eq, desc, count } from 'drizzle-orm';
+import { users as usersTable, whitelist as whitelistTable, items as itemsTable } from '@/db/schema';
+import type { DbWhitelist, DbItem } from '@/db/schema';
 import Logo from '@/components/Logo';
 import AddToWhitelistForm from './AddToWhitelistForm';
-import DeleteWhitelistButton from './DeleteWhitelistButton';
-import SetTierButton from './SetTierButton';
 import SignOutButton from './SignOutButton';
+import AdminInventoryGrid from './AdminInventoryGrid';
+import AdminWhitelistTable, { type WhitelistRow } from './AdminWhitelistTable';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -45,12 +45,6 @@ function StatCard({ label, value, sub, color }: { label: string; value: string |
   );
 }
 
-// ─── types ───────────────────────────────────────────────────────────────────
-
-type WhitelistRow =
-  | { kind: 'user'; data: DbUser }
-  | { kind: 'pending'; email: string; addedAt: Date };
-
 // ─── page ───────────────────────────────────────────────────────────────────
 
 export default async function AdminPage() {
@@ -59,15 +53,21 @@ export default async function AdminPage() {
     redirect('/');
   }
 
-  const [allUsers, whitelistEntries] = await Promise.all([
+  const [allUsers, whitelistEntries, itemCounts] = await Promise.all([
     db.select().from(usersTable).orderBy(usersTable.createdAt),
     db.select().from(whitelistTable).orderBy(whitelistTable.addedAt),
+    db.select({ userId: itemsTable.userId, count: count() }).from(itemsTable).groupBy(itemsTable.userId),
   ]);
 
+  const itemCountMap = new Map(itemCounts.map((r) => [r.userId, Number(r.count)]));
+
+  const adminUser = allUsers.find((u) => u.email === SUPERADMIN_EMAIL);
+  const adminItems: DbItem[] = adminUser
+    ? await db.select().from(itemsTable).where(eq(itemsTable.userId, adminUser.id)).orderBy(desc(itemsTable.addedAt))
+    : [];
+
   const totalUsers      = allUsers.length;
-  const whitelistedUsers = allUsers
-    .filter((u) => u.isWhitelisted)
-    .sort((a, b) => (b.lastLoginAt?.getTime() ?? 0) - (a.lastLoginAt?.getTime() ?? 0));
+  const whitelistedUsers = allUsers.filter((u) => u.isWhitelisted);
   const verifiedCount   = allUsers.filter((u) => u.isWhitelisted && u.tier !== 'premium').length;
   const premiumCount    = allUsers.filter((u) => u.tier === 'premium').length;
 
@@ -75,8 +75,24 @@ export default async function AdminPage() {
   const pendingEntries: DbWhitelist[] = whitelistEntries.filter((e) => !registeredEmails.has(e.email));
 
   const whitelistRows: WhitelistRow[] = [
-    ...whitelistedUsers.map((u) => ({ kind: 'user' as const, data: u })),
-    ...pendingEntries.map((e) => ({ kind: 'pending' as const, email: e.email, addedAt: e.addedAt })),
+    ...whitelistedUsers.map((u) => ({
+      kind: 'user' as const,
+      id: u.id,
+      email: u.email,
+      username: u.username,
+      displayName: u.displayName,
+      avatarUrl: u.avatarUrl,
+      tier: u.tier,
+      isActive: u.isActive,
+      lastLoginAt: u.lastLoginAt?.toISOString() ?? null,
+      createdAt: u.createdAt.toISOString(),
+      itemCount: itemCountMap.get(u.id) ?? 0,
+    })),
+    ...pendingEntries.map((e) => ({
+      kind: 'pending' as const,
+      email: e.email,
+      addedAt: e.addedAt.toISOString(),
+    })),
   ];
 
   const activeUnwhitelisted = allUsers
@@ -111,9 +127,12 @@ export default async function AdminPage() {
                   {session.user?.name?.[0]?.toUpperCase() ?? 'A'}
                 </div>
               )}
-              <span className="text-sm text-slate-300 font-medium hidden sm:block">
-                {session.user?.name?.split(' ')[0]}
-              </span>
+              <div className="hidden sm:flex flex-col items-start">
+                <span className="text-sm text-slate-300 font-medium leading-tight">
+                  {session.user?.name?.split(' ')[0]}
+                </span>
+                <span className="text-[10px] font-bold text-purple-300 leading-tight">Admin</span>
+              </div>
             </div>
             <SignOutButton />
           </div>
@@ -145,113 +164,11 @@ export default async function AdminPage() {
             </span>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
-            <div className="hidden md:grid grid-cols-[2fr_2fr_1.8fr_1fr_auto_auto] gap-4 px-5 py-3 border-b border-slate-800 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-              <span>Trader</span>
-              <span>Email</span>
-              <span>Status</span>
-              <span>Joined</span>
-              <span>Tier</span>
-              <span></span>
-            </div>
+          <AdminWhitelistTable rows={whitelistRows} />
 
-            {whitelistRows.length === 0 && (
-              <div className="px-5 py-8 text-center text-sm text-slate-500">No whitelisted users yet.</div>
-            )}
-
-            {whitelistRows.map((row, idx) => (
-              <div
-                key={row.kind === 'user' ? row.data.id : row.email}
-                className={`flex flex-col md:grid md:grid-cols-[2fr_2fr_1.8fr_1fr_auto_auto] gap-2 md:gap-4 px-5 py-4 items-start md:items-center ${
-                  idx !== whitelistRows.length - 1 ? 'border-b border-slate-800/60' : ''
-                } hover:bg-slate-800/30 transition-colors`}
-              >
-                {/* Trader */}
-                {row.kind === 'user' ? (
-                  <div className="flex items-center gap-3">
-                    <div className="relative w-9 h-9 rounded-full overflow-hidden bg-slate-700 flex-shrink-0">
-                      {row.data.avatarUrl ? (
-                        <AppImage src={row.data.avatarUrl} alt={row.data.displayName} fill className="object-cover" unoptimized />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-white font-bold text-sm bg-gradient-to-br from-blue-500 to-purple-600">
-                          {row.data.displayName[0]?.toUpperCase() ?? '?'}
-                        </div>
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <span className="text-sm font-semibold text-white block truncate">{row.data.displayName || row.data.username}</span>
-                      <span className="text-xs text-slate-500">@{row.data.username}</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0">
-                      <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-                      </svg>
-                    </div>
-                    <div className="min-w-0">
-                      <span className="text-sm font-semibold text-slate-400 truncate block">{row.email}</span>
-                      <span className="text-xs text-slate-600">Invited — no account yet</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Email */}
-                <span className="text-xs text-slate-400 truncate">
-                  {row.kind === 'user' ? row.data.email : row.email}
-                </span>
-
-                {/* Status */}
-                {row.kind === 'user' ? (
-                  row.data.isActive ? (
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0" />
-                        <span className="text-xs font-semibold text-green-400">Active</span>
-                      </div>
-                      <p className="text-xs text-slate-500 mt-0.5 pl-3">{timeAgo(row.data.lastLoginAt)}</p>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
-                      <span className="text-xs font-bold text-red-400">Not Active Yet</span>
-                    </div>
-                  )
-                ) : (
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-500 flex-shrink-0" />
-                    <span className="text-xs text-slate-500">Pending invite</span>
-                  </div>
-                )}
-
-                {/* Joined */}
-                <span className="text-xs text-slate-400">
-                  {row.kind === 'user'
-                    ? formatDateTime(row.data.createdAt)
-                    : formatDateTime(row.addedAt)}
-                </span>
-
-                {/* Tier */}
-                <div className="flex items-center">
-                  {row.kind === 'user' ? (
-                    <SetTierButton userId={row.data.id} currentTier={row.data.tier} />
-                  ) : (
-                    <span className="text-xs text-slate-600">—</span>
-                  )}
-                </div>
-
-                {/* Delete */}
-                <div className="flex items-center">
-                  <DeleteWhitelistButton
-                    email={row.kind === 'user' ? row.data.email : row.email}
-                  />
-                </div>
-              </div>
-            ))}
+          <div className="mt-4">
+            <AddToWhitelistForm />
           </div>
-
-          <AddToWhitelistForm />
         </section>
 
         {/* ─── Active but not Whitelisted ──────────────────────────────── */}
@@ -306,6 +223,45 @@ export default async function AdminPage() {
             </div>
           </section>
         )}
+        {/* ─── My Inventory ────────────────────────────────────────────── */}
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-lg font-bold text-white">My Trade Inventory</h2>
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                {adminItems.length}
+              </span>
+            </div>
+            <Link
+              href="/profile"
+              className="text-xs text-blue-400 hover:text-blue-300 font-semibold transition-colors"
+            >
+              Manage →
+            </Link>
+          </div>
+
+          <AdminInventoryGrid
+            location={(adminUser?.location ?? 'Manila') as import('@/types/item').Location}
+            initialItems={adminItems.map((item) => ({
+              id:                     item.id,
+              name:                   item.name,
+              category:               item.category as import('@/types/item').Category,
+              condition:              item.condition as import('@/types/item').Condition,
+              estimatedValue:         item.estimatedValue,
+              location:               item.location as import('@/types/item').Location,
+              tradePreference:        item.tradePreference as import('@/types/item').TradePreference,
+              frontImageUrl:          item.frontImageUrl,
+              backImageUrl:           item.backImageUrl,
+              description:            item.description,
+              lookingFor:             item.lookingFor,
+              notes:                  item.notes,
+              cashDifferenceAccepted: item.cashDifferenceAccepted,
+              tags:                   item.tags,
+              isForTrade:             item.isForTrade,
+              addedAt:                item.addedAt.toISOString(),
+            }))}
+          />
+        </section>
       </main>
     </div>
   );

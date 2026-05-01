@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
 
     const result = await model.generateContent([
       { inlineData: { data: imageBase64, mimeType: resolvedType } },
-      `You are a trading card expert. Analyze this card image and return ONLY a valid JSON object — no markdown, no code fences, no extra text. Use this exact shape:
+      `You are a trading card expert serving the Philippine market. Analyze this card image and return ONLY a valid JSON object — no markdown, no code fences, no extra text. Use this exact shape:
 {
   "name": "full card name e.g. LeBron James RC Exquisite",
   "category": "one of: Basketball Cards | Pokemon Cards | One Piece Cards | Football Cards | Baseball Cards | MMA Cards | WWE Cards | Others",
@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
   "description": "1-2 sentence description",
   "tags": ["tag1", "tag2"]
 }
+IMPORTANT: estimatedValue must be in Philippine Peso (PHP). Convert any USD market price using approximately 56 PHP per 1 USD. For example, a card worth $100 USD should be 5600.
 If you cannot identify the card, still return the JSON with your best guesses and null for unknown fields.`,
     ]);
 

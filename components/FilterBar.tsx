@@ -17,9 +17,9 @@ const CONDITIONS: Condition[] = ['Raw', 'Graded', 'Sealed', 'Used', 'Brand New']
 
 const TRADE_PREFS: TradePreference[] = [
   'Trade Only',
+  'Cash Only',
   'Trade + Cash',
-  'Cash Difference Accepted',
-  'Open to Offers',
+  'Open to any offers',
 ];
 
 const LOCATIONS: Location[] = [

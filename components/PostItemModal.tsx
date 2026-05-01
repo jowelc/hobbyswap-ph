@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { InventoryItem } from '@/types/inventoryItem';
 import { Category, Condition, TradePreference, Location } from '@/types/item';
+import { convertIfHeic } from '@/lib/heic';
 
 const CATEGORIES: Category[] = [
   'Basketball Cards', 'Pokemon Cards', 'One Piece Cards', 'Football Cards',
@@ -10,7 +11,7 @@ const CATEGORIES: Category[] = [
 ];
 const CONDITIONS: Condition[] = ['Raw', 'Graded', 'Sealed', 'Used', 'Brand New'];
 const TRADE_PREFS: TradePreference[] = [
-  'Trade Only', 'Trade + Cash', 'Cash Difference Accepted', 'Open to Offers',
+  'Trade Only', 'Cash Only', 'Trade + Cash', 'Open to any offers',
 ];
 
 const PLACEHOLDER_FRONT = '/card-placeholder-front.svg';
@@ -53,6 +54,8 @@ export default function PostItemModal({ onClose, onSave, location, onChangeLocat
   const [backImageUrl, setBackImageUrl] = useState('');
   const [storedBase64, setStoredBase64] = useState('');
   const [storedMime, setStoredMime] = useState('');
+  const [storedAiBase64, setStoredAiBase64] = useState('');
+  const [storedAiMime, setStoredAiMime] = useState('');
 
   const [estimatedValue, setEstimatedValue] = useState('');
   const [tradePreference, setTradePreference] = useState<TradePreference | ''>('');
@@ -113,7 +116,21 @@ export default function PostItemModal({ onClose, onSave, location, onChangeLocat
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageBase64: base64, mimeType: mime }),
       });
-      const data = await res.json();
+
+      // Vercel (and some proxies) return plain text for 413/502/etc — not JSON
+      let data: Record<string, unknown> = {};
+      try {
+        data = await res.json();
+      } catch {
+        setAiStatus('error');
+        setAiErrorMsg(
+          res.status === 413
+            ? 'Image too large to process. Please use a smaller photo.'
+            : `Server error (${res.status}). Please try again.`
+        );
+        setShowManual(true);
+        return;
+      }
 
       if (!res.ok) {
         if (res.status === 429 || data.errorType === 'quota') {
@@ -125,7 +142,7 @@ export default function PostItemModal({ onClose, onSave, location, onChangeLocat
           setRetryAfter(secs);
         } else {
           setAiStatus('error');
-          setAiErrorMsg(data.error ?? 'AI identification failed.');
+          setAiErrorMsg((data.error as string) ?? 'AI identification failed.');
         }
         setShowManual(true);
         return;
@@ -134,7 +151,7 @@ export default function PostItemModal({ onClose, onSave, location, onChangeLocat
       setAiCard(data);
       setAiStatus('success');
       setManual({
-        name: data.name ?? '',
+        name: (data.name as string) ?? '',
         category: (data.category as Category) ?? '',
         condition: (data.condition as Condition) ?? '',
       });
@@ -174,7 +191,12 @@ export default function PostItemModal({ onClose, onSave, location, onChangeLocat
     setStoredBase64(base64);
     setStoredMime(file.type);
     void uploadToCloud(base64, file.type, 'front');
-    await runAi(base64, file.type);
+
+    // Compress to ≤1024px JPEG before sending to AI to stay under Vercel's 4.5 MB body limit
+    const { base64: aiBase64, mimeType: aiMime } = await compressForAI(file);
+    setStoredAiBase64(aiBase64);
+    setStoredAiMime(aiMime);
+    await runAi(aiBase64, aiMime);
   }
 
   async function handleBackImage(url: string, file: File) {
@@ -287,7 +309,7 @@ export default function PostItemModal({ onClose, onSave, location, onChangeLocat
           description:            aiCard?.description ?? '',
           lookingFor:             '',
           notes:                  notes.trim(),
-          cashDifferenceAccepted: tradePreference === 'Trade + Cash' || tradePreference === 'Cash Difference Accepted',
+          cashDifferenceAccepted: tradePreference === 'Trade + Cash' || tradePreference === 'Open to any offers',
           tags:                   aiCard?.tags ?? [],
         }),
       });
@@ -409,10 +431,10 @@ export default function PostItemModal({ onClose, onSave, location, onChangeLocat
                   return 'The free Gemini API quota has been reached. You can still post your item manually.';
                 })()}
               </p>
-              {retryAfter === 0 && storedBase64 && (
+              {retryAfter === 0 && storedAiBase64 && (
                 <button
                   type="button"
-                  onClick={() => runAi(storedBase64, storedMime)}
+                  onClick={() => runAi(storedAiBase64, storedAiMime)}
                   className="text-xs font-semibold text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 px-3 py-1.5 rounded-lg transition-colors"
                 >
                   Retry AI Identification →
@@ -426,10 +448,10 @@ export default function PostItemModal({ onClose, onSave, location, onChangeLocat
             <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-4 py-3 space-y-1">
               <p className="text-sm font-semibold text-yellow-400">AI identification failed</p>
               <p className="text-xs text-yellow-300/70">{aiErrorMsg}</p>
-              {storedBase64 && (
+              {storedAiBase64 && (
                 <button
                   type="button"
-                  onClick={() => runAi(storedBase64, storedMime)}
+                  onClick={() => runAi(storedAiBase64, storedAiMime)}
                   className="text-xs text-yellow-400 hover:text-yellow-300 underline"
                 >
                   Try again →
@@ -569,6 +591,34 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
+// Resize + re-encode to JPEG so the base64 payload stays well under Vercel's 4.5 MB body limit
+function compressForAI(file: File, maxDim = 1024, quality = 0.85): Promise<{ base64: string; mimeType: string }> {
+  return new Promise((resolve) => {
+    const img = new window.Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      let { width, height } = img;
+      if (width > maxDim || height > maxDim) {
+        const scale = maxDim / Math.max(width, height);
+        width  = Math.round(width  * scale);
+        height = Math.round(height * scale);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width  = width;
+      canvas.height = height;
+      canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+      const dataUrl = canvas.toDataURL('image/jpeg', quality);
+      resolve({ base64: dataUrl.split(',')[1], mimeType: 'image/jpeg' });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      fileToBase64(file).then((b64) => resolve({ base64: b64, mimeType: file.type }));
+    };
+    img.src = objectUrl;
+  });
+}
+
 function ImageUpload({
   label,
   value,
@@ -580,10 +630,11 @@ function ImageUpload({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
-  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    onChange(URL.createObjectURL(file), file);
+    const converted = await convertIfHeic(file);
+    onChange(URL.createObjectURL(converted), converted);
   }
 
   return (

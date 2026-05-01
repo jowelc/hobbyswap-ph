@@ -8,7 +8,7 @@ export default async function AuthRedirectPage() {
   const session = await auth();
   const email = session?.user?.email ?? null;
 
-  if (!email || !isWhitelisted(email)) {
+  if (!email || !await isWhitelisted(email)) {
     redirect(`/access-denied${email ? `?email=${encodeURIComponent(email)}` : ''}`);
   }
 

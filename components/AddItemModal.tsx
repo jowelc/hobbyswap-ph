@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { InventoryItem } from '@/types/inventoryItem';
 import { Category, Condition, TradePreference, Location } from '@/types/item';
+import { convertIfHeic } from '@/lib/heic';
 
 const CATEGORIES: Category[] = [
   'Basketball Cards', 'Pokemon Cards', 'One Piece Cards', 'Football Cards',
@@ -10,7 +11,7 @@ const CATEGORIES: Category[] = [
 ];
 const CONDITIONS: Condition[] = ['Raw', 'Graded', 'Sealed', 'Used', 'Brand New'];
 const TRADE_PREFS: TradePreference[] = [
-  'Trade Only', 'Trade + Cash', 'Cash Difference Accepted', 'Open to Offers',
+  'Trade Only', 'Cash Only', 'Trade + Cash', 'Open to any offers',
 ];
 const LOCATIONS: Location[] = [
   'Pampanga', 'Manila', 'Bulacan', 'Cebu', 'Davao', 'Cavite', 'Laguna', 'Others',
@@ -111,18 +112,17 @@ export default function AddItemModal({ onClose, onSave, existing }: Props) {
           )}
 
           {/* For trade toggle — prominent at top */}
-          <div className="flex items-center justify-between bg-slate-800/60 rounded-xl p-4 border border-slate-700/50">
+          <div
+            className="flex items-center justify-between bg-slate-800/60 rounded-xl p-4 border border-slate-700/50 cursor-pointer select-none"
+            onClick={() => set('isForTrade', !form.isForTrade)}
+          >
             <div>
               <p className="text-sm font-semibold text-white">Available for Trade</p>
               <p className="text-xs text-slate-400">Toggle off to mark as not currently available</p>
             </div>
-            <button
-              type="button"
-              onClick={() => set('isForTrade', !form.isForTrade)}
-              className={`relative w-12 h-6 rounded-full transition-colors flex-shrink-0 ${form.isForTrade ? 'bg-green-500' : 'bg-slate-600'}`}
-            >
-              <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${form.isForTrade ? 'translate-x-6' : 'translate-x-0.5'}`} />
-            </button>
+            <div className={`relative w-11 h-6 rounded-full flex-shrink-0 transition-colors duration-200 ${form.isForTrade ? 'bg-green-500' : 'bg-slate-600'}`}>
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${form.isForTrade ? 'translate-x-5' : 'translate-x-0'}`} />
+            </div>
           </div>
 
           {/* Two-column grid for compact fields */}
@@ -243,10 +243,11 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function ImageUpload({ label, value, onChange }: { label: string; value: string; onChange: (url: string) => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
-  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    onChange(URL.createObjectURL(file));
+    const converted = await convertIfHeic(file);
+    onChange(URL.createObjectURL(converted));
   }
 
   return (
