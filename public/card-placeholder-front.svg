@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 560" width="400" height="560">
+  <!-- Base -->
+  <rect width="400" height="560" fill="#1e293b"/>
+
+  <!-- Dashed border -->
+  <rect x="14" y="14" width="372" height="532" rx="10" fill="none"
+        stroke="#334155" stroke-width="1.5" stroke-dasharray="8 5"/>
+
+  <!-- Camera body -->
+  <rect x="152" y="228" width="96" height="72" rx="8" fill="none" stroke="#475569" stroke-width="2.5"/>
+  <!-- Lens ring -->
+  <circle cx="200" cy="264" r="22" fill="none" stroke="#475569" stroke-width="2"/>
+  <!-- Lens inner -->
+  <circle cx="200" cy="264" r="11" fill="#1e293b" stroke="#475569" stroke-width="1.5"/>
+  <!-- Viewfinder notch -->
+  <path d="M172,228 L178,218 H222 L228,228" fill="none" stroke="#475569" stroke-width="2.5" stroke-linejoin="round"/>
+  <!-- Flash dot -->
+  <circle cx="237" cy="238" r="4" fill="#475569"/>
+
+  <!-- Label -->
+  <text x="200" y="326" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="13" fill="#475569" letter-spacing="1">No Image</text>
+  <text x="200" y="346" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="10" fill="#334155">Click to upload</text>
+</svg>
