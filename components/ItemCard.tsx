@@ -23,8 +23,8 @@ export default function ItemCard({ item, isOwner = false, isWatched = false, onT
   const [offerOpen, setOfferOpen] = useState(false);
 
   const frontSrc = frontError ? '/card-placeholder-front.svg' : item.frontImageUrl;
-  const backSrc  = backError  ? '/card-placeholder-back.svg'  : item.backImageUrl;
-  const hasBack  = Boolean(item.backImageUrl);
+  const hasBack  = !!item.backImageUrl && !backError;
+  const backSrc  = item.backImageUrl || '';
 
   const showSkeleton = showBack
     ? (hasBack && !backLoaded)
@@ -37,7 +37,7 @@ export default function ItemCard({ item, isOwner = false, isWatched = false, onT
         <Link
           href={isOwner ? '/profile' : `/users/${item.ownerUsername}?item=${item.id}`}
           className="block relative aspect-[3/4] overflow-hidden bg-slate-800 flex-shrink-0"
-          onMouseEnter={() => setShowBack(true)}
+          onMouseEnter={() => hasBack && setShowBack(true)}
           onMouseLeave={() => setShowBack(false)}
         >
           {/* Skeleton */}

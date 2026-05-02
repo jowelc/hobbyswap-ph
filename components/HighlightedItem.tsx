@@ -27,13 +27,14 @@ export default function HighlightedItem({ item, ownerUserId, ownerUsername, owne
   const [imgLoaded, setImgLoaded] = useState(false);
 
   const fallback = '/card-placeholder-front.svg';
-  const fallbackBack = '/card-placeholder-back.svg';
+  const hasBack = !!item.backImageUrl && !backImgError;
 
-  const currentImg = showBack
-    ? backImgError ? fallbackBack : item.backImageUrl
+  const currentImg = showBack && hasBack
+    ? item.backImageUrl
     : imgError ? fallback : item.frontImageUrl;
 
   function handleImgChange(isBack: boolean) {
+    if (isBack && !hasBack) return;
     setImgLoaded(false);
     setShowBack(isBack);
   }
@@ -72,25 +73,27 @@ export default function HighlightedItem({ item, ownerUserId, ownerUsername, owne
               </div>
             </div>
 
-            {/* Front / Back toggle */}
-            <div className="flex rounded-lg overflow-hidden border border-slate-700 text-sm">
-              <button
-                onClick={() => handleImgChange(false)}
-                className={`px-4 py-1.5 font-medium transition-colors ${
-                  !showBack ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Front
-              </button>
-              <button
-                onClick={() => handleImgChange(true)}
-                className={`px-4 py-1.5 font-medium transition-colors ${
-                  showBack ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Back
-              </button>
-            </div>
+            {/* Front / Back toggle — only shown when a back image exists */}
+            {hasBack && (
+              <div className="flex rounded-lg overflow-hidden border border-slate-700 text-sm">
+                <button
+                  onClick={() => handleImgChange(false)}
+                  className={`px-4 py-1.5 font-medium transition-colors ${
+                    !showBack ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Front
+                </button>
+                <button
+                  onClick={() => handleImgChange(true)}
+                  className={`px-4 py-1.5 font-medium transition-colors ${
+                    showBack ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Back
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Details panel */}
@@ -204,7 +207,7 @@ export default function HighlightedItem({ item, ownerUserId, ownerUsername, owne
         <ImageLightbox
           images={[
             { src: imgError ? fallback : item.frontImageUrl, label: 'Front' },
-            { src: backImgError ? fallbackBack : item.backImageUrl, label: 'Back' },
+            ...(hasBack ? [{ src: item.backImageUrl, label: 'Back' }] : []),
           ]}
           initialIndex={0}
           onClose={() => setLightboxOpen(false)}

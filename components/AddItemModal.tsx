@@ -25,7 +25,6 @@ interface Props {
 }
 
 const PLACEHOLDER_FRONT = '/card-placeholder-front.svg';
-const PLACEHOLDER_BACK = '/card-placeholder-back.svg';
 
 export default function AddItemModal({ onClose, onSave, existing }: Props) {
   const [form, setForm] = useState({
@@ -78,7 +77,7 @@ export default function AddItemModal({ onClose, onSave, existing }: Props) {
       notes: existing?.notes ?? '',
       cashDifferenceAccepted: form.cashDifferenceAccepted,
       frontImageUrl: form.frontImageUrl.trim() || PLACEHOLDER_FRONT,
-      backImageUrl: form.backImageUrl.trim() || PLACEHOLDER_BACK,
+      backImageUrl: form.backImageUrl.trim() || '',
       isForTrade: form.isForTrade,
       addedAt: existing?.addedAt ?? new Date().toISOString(),
       tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),

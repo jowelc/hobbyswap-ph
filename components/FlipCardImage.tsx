@@ -28,12 +28,13 @@ export default function FlipCardImage({
 
   const aspect = aspectRatio === 'card' ? 'aspect-[5/7]' : 'aspect-square';
   const fallback = '/card-placeholder-front.svg';
-  const fallbackBack = '/card-placeholder-back.svg';
+
+  const hasBack = !!backUrl && !backError;
 
   const resolvedFront = frontError || !frontUrl ? fallback : frontUrl;
-  const resolvedBack  = backError  || !backUrl  ? fallbackBack : backUrl;
+  const resolvedBack  = hasBack ? backUrl : resolvedFront;
 
-  const currentUrl = showBack ? resolvedBack : resolvedFront;
+  const currentUrl = showBack && hasBack ? resolvedBack : resolvedFront;
 
   const lightboxImages = [
     { src: resolvedFront, label: 'Front' },
@@ -71,21 +72,23 @@ export default function FlipCardImage({
 
         {/* Zoom hint — desktop */}
         <div className="hidden md:flex absolute top-2 left-2 text-xs bg-black/50 text-white/60 px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm pointer-events-none">
-          {showBack ? 'Back · click to expand' : 'Hover for back · click to expand'}
+          {hasBack ? (showBack ? 'Back · click to expand' : 'Hover for back · click to expand') : 'Click to expand'}
         </div>
 
-        {/* Mobile toggle button — stops propagation so it doesn't open lightbox */}
-        <button
-          className="md:hidden absolute bottom-2 right-2 text-xs bg-black/60 text-white px-2 py-1 rounded-md backdrop-blur-sm font-medium border border-white/10"
-          onTouchEnd={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setShowBack((v) => !v);
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {showBack ? 'Front' : 'Back'}
-        </button>
+        {/* Mobile toggle button — only shown when there's a back image */}
+        {hasBack && (
+          <button
+            className="md:hidden absolute bottom-2 right-2 text-xs bg-black/60 text-white px-2 py-1 rounded-md backdrop-blur-sm font-medium border border-white/10"
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowBack((v) => !v);
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {showBack ? 'Front' : 'Back'}
+          </button>
+        )}
       </div>
 
       {lightboxOpen && (

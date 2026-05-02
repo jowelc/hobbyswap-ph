@@ -16,7 +16,6 @@ const TRADE_PREFS: TradePreference[] = [
 ];
 
 const PLACEHOLDER_FRONT = '/card-placeholder-front.svg';
-const PLACEHOLDER_BACK = '/card-placeholder-back.svg';
 
 interface AiCard {
   name?: string;
