@@ -215,7 +215,7 @@ export default function NotificationBell() {
             {sysNotifs.map((n) => (
               <div
                 key={n.id}
-                className={`flex items-start gap-3 px-4 py-3 ${!n.readAt ? 'bg-slate-700/30' : ''}`}
+                className={`flex items-start gap-3 px-4 py-3 group ${!n.readAt ? 'bg-slate-700/30' : ''}`}
               >
                 <div className="relative w-9 h-9 rounded-full overflow-hidden bg-slate-700 flex-shrink-0">
                   {n.actorAvatar ? (
@@ -233,6 +233,18 @@ export default function NotificationBell() {
                   </div>
                   <p className="text-[10px] text-slate-600 mt-1">{timeAgo(n.createdAt)}</p>
                 </div>
+                <button
+                  onClick={() => {
+                    setSysNotifs((prev) => prev.filter((x) => x.id !== n.id));
+                    fetch(`/api/notifications/${n.id}`, { method: 'DELETE' }).catch(() => {});
+                  }}
+                  className="opacity-0 group-hover:opacity-100 flex-shrink-0 p-1 text-slate-600 hover:text-red-400 transition-all rounded"
+                  title="Delete notification"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
             ))}
 

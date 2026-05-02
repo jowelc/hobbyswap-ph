@@ -86,9 +86,12 @@ export const watchlist = pgTable('watchlist', {
 
 export const messages = pgTable('messages', {
   id:         uuid('id').primaryKey().defaultRandom(),
+  offerId:    text('offer_id').notNull(),
   fromUserId: uuid('from_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   toUserId:   uuid('to_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  text:       text('text').notNull(),
+  text:       text('text').notNull().default(''),
+  imageUrl:   text('image_url'),
+  readAt:     timestamp('read_at', { withTimezone: true }),
   createdAt:  timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 

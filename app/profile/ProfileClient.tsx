@@ -159,7 +159,8 @@ export default function ProfileClient({ email, name, image, username, displayNam
   const [actingOfferIds,    setActingOfferIds]    = useState<Set<string>>(new Set());
   const [confirmOfferId,    setConfirmOfferId]    = useState<string | null>(null);
   const [loadingCounterId,  setLoadingCounterId]  = useState<string | null>(null);
-  const [chatTarget, setChatTarget] = useState<{ userId: string; username: string; displayName: string; avatar: string; tradeContext: string } | null>(null);
+  const [chatTarget, setChatTarget] = useState<{ offerId: string; userId: string; username: string; displayName: string; avatar: string; tradeContext: string } | null>(null);
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [showDealSuccess, setShowDealSuccess] = useState(false);
   const [loadingDoneDealId, setLoadingDoneDealId] = useState<string | null>(null);
   const [clickedDoneDeals, setClickedDoneDeals] = useState<Set<string>>(new Set());
@@ -202,6 +203,10 @@ export default function ProfileClient({ email, name, image, username, displayNam
     fetch('/api/offers?direction=archived')
       .then((r) => r.json())
       .then((data: ArchivedOfferRow[]) => setArchivedOffers(Array.isArray(data) ? data : []))
+      .catch(() => {});
+    fetch('/api/messages/unread')
+      .then((r) => r.json())
+      .then((data: Record<string, number>) => setUnreadCounts(data ?? {}))
       .catch(() => {});
   }, []);
 
@@ -261,6 +266,12 @@ export default function ProfileClient({ email, name, image, username, displayNam
           setShowDealSuccess(true);
         }
       }).catch(() => {});
+
+      // Unread message counts — skip if a chat is open (GET /messages already marks as read)
+      fetch('/api/messages/unread')
+        .then((r) => r.json())
+        .then((data: Record<string, number>) => setUnreadCounts(data ?? {}))
+        .catch(() => {});
     };
     const interval = setInterval(poll, 5000);
     return () => clearInterval(interval);
@@ -1056,13 +1067,21 @@ export default function ProfileClient({ email, name, image, username, displayNam
                       <div className="px-4 py-3 border-t border-slate-700/40 space-y-2">
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => setChatTarget({ userId: otherUserId, username: otherUsername, displayName: otherDisplayName, avatar: otherAvatar, tradeContext })}
-                            className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors"
+                            onClick={() => {
+                              setUnreadCounts((prev) => { const n = { ...prev }; delete n[offer.id]; return n; });
+                              setChatTarget({ offerId: offer.id, userId: otherUserId, username: otherUsername, displayName: otherDisplayName, avatar: otherAvatar, tradeContext });
+                            }}
+                            className="relative flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors"
                           >
                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                             </svg>
                             Chat
+                            {(unreadCounts[offer.id] ?? 0) > 0 && (
+                              <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1 leading-none">
+                                {unreadCounts[offer.id] > 99 ? '99+' : unreadCounts[offer.id]}
+                              </span>
+                            )}
                           </button>
                           <button onClick={() => setOpenOfferId(offer.id)} className="text-xs text-slate-500 hover:text-white transition-colors px-2 py-2">
                             View details →
@@ -1120,8 +1139,9 @@ export default function ProfileClient({ email, name, image, username, displayNam
                   const cashAbs          = Math.abs(offer.cashDiff);
                   const tradeContext     = `${offer.offeredCount} card${offer.offeredCount !== 1 ? 's' : ''} ↔ ${offer.requestedCount} card${offer.requestedCount !== 1 ? 's' : ''}${hasCash ? ` + ₱${cashAbs.toLocaleString()}` : ''}`;
                   const isCompleted      = offer.status === 'completed';
+                  const confirming = confirmOfferId === offer.id;
                   return (
-                    <div key={offer.id} className={`bg-slate-800/40 border rounded-2xl px-4 py-3 flex items-center gap-3 ${isCompleted ? 'border-purple-500/20' : 'border-slate-600/40'}`}>
+                    <div key={offer.id} className={`bg-slate-800/40 border rounded-2xl px-4 py-3 flex items-center gap-3 group ${isCompleted ? 'border-purple-500/20' : 'border-slate-600/40'}`}>
                       <div className="relative w-10 h-10 rounded-full overflow-hidden bg-slate-700 flex-shrink-0">
                         {otherAvatar ? (
                           <AppImage src={otherAvatar} alt={otherDisplayName} fill className="object-cover" unoptimized />
@@ -1141,7 +1161,41 @@ export default function ProfileClient({ email, name, image, username, displayNam
                         </div>
                         <p className="text-xs text-slate-400 mt-0.5">{tradeContext}</p>
                       </div>
-                      <p className="text-[10px] text-slate-500 flex-shrink-0">{timeAgo(offer.createdAt)}</p>
+
+                      {confirming ? (
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className="text-xs text-slate-400">Remove?</span>
+                          <button
+                            onClick={() => {
+                              setConfirmOfferId(null);
+                              setArchivedOffers((prev) => prev.filter((o) => o.id !== offer.id));
+                              fetch(`/api/offers/${offer.id}`, { method: 'DELETE' }).catch(() => {});
+                            }}
+                            className="px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white text-xs font-semibold rounded-lg transition-colors"
+                          >
+                            Yes
+                          </button>
+                          <button
+                            onClick={() => setConfirmOfferId(null)}
+                            className="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-lg transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-[10px] text-slate-500 flex-shrink-0">{timeAgo(offer.createdAt)}</p>
+                          <button
+                            onClick={() => setConfirmOfferId(offer.id)}
+                            className="opacity-0 group-hover:opacity-100 flex-shrink-0 p-1.5 text-slate-600 hover:text-red-400 transition-all rounded-lg hover:bg-red-500/10"
+                            title="Remove from archive"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </>
+                      )}
                     </div>
                   );
                 })}
@@ -1243,12 +1297,20 @@ export default function ProfileClient({ email, name, image, username, displayNam
       {/* Chat modal */}
       {chatTarget && (
         <ChatModal
+          offerId={chatTarget.offerId}
           traderUserId={chatTarget.userId}
           traderUsername={chatTarget.username}
           traderDisplayName={chatTarget.displayName}
           traderAvatar={chatTarget.avatar}
           tradeContext={chatTarget.tradeContext}
-          onClose={() => setChatTarget(null)}
+          onClose={() => {
+            setChatTarget(null);
+            // Refresh counts after closing so the badge reflects what was actually read
+            fetch('/api/messages/unread')
+              .then((r) => r.json())
+              .then((data: Record<string, number>) => setUnreadCounts(data ?? {}))
+              .catch(() => {});
+          }}
         />
       )}
 

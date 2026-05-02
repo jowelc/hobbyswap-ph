@@ -5,7 +5,6 @@ import Image from 'next/image';
 import { Item } from '@/types/item';
 import { formatCurrency, getConditionColor, getTradePrefColor } from '@/lib/utils';
 import TradeOfferModal from './TradeOfferModal';
-import ChatModal from './ChatModal';
 import ImageLightbox from './ImageLightbox';
 
 interface Props {
@@ -21,7 +20,6 @@ interface Props {
 export default function HighlightedItem({ item, ownerUserId, ownerUsername, ownerAvatar, ownerLookingFor, tier, isOwner = false }: Props) {
   const [showBack, setShowBack] = useState(false);
   const [tradeModalOpen, setTradeModalOpen] = useState(false);
-  const [chatModalOpen, setChatModalOpen] = useState(false);
   const [watchlisted, setWatchlisted] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [backImgError, setBackImgError] = useState(false);
@@ -177,12 +175,6 @@ export default function HighlightedItem({ item, ownerUserId, ownerUsername, owne
                     🤝 Make Trade Offer
                   </button>
                   <button
-                    onClick={() => setChatModalOpen(true)}
-                    className="flex-1 sm:flex-none px-5 py-2.5 bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold rounded-xl transition-colors"
-                  >
-                    💬 Message Trader
-                  </button>
-                  <button
                     onClick={() => setWatchlisted((v) => !v)}
                     className={`px-4 py-2.5 text-sm font-semibold rounded-xl transition-all border ${
                       watchlisted
@@ -206,14 +198,6 @@ export default function HighlightedItem({ item, ownerUserId, ownerUsername, owne
           targetUsername={ownerUsername}
           targetLookingFor={ownerLookingFor}
           onClose={() => setTradeModalOpen(false)}
-        />
-      )}
-      {chatModalOpen && (
-        <ChatModal
-          traderUserId={ownerUserId}
-          traderUsername={ownerUsername}
-          traderAvatar={ownerAvatar}
-          onClose={() => setChatModalOpen(false)}
         />
       )}
       {lightboxOpen && (

@@ -272,23 +272,26 @@ export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id:
 
   await db.delete(tradeOffers).where(eq(tradeOffers.id, id));
 
-  const isSender    = offer.fromUserId === myId;
-  const otherUserId = isSender ? offer.toUserId : offer.fromUserId;
-  const type        = isSender ? 'offer_retracted' : 'offer_deleted';
-  const msgBody     = isSender
-    ? `@${actor.username} retracted their trade offer`
-    : `@${actor.username} removed a declined trade offer`;
+  // Skip notification for already-archived offers (declined / completed) — no value in notifying
+  if (offer.status === 'pending') {
+    const isSender    = offer.fromUserId === myId;
+    const otherUserId = isSender ? offer.toUserId : offer.fromUserId;
+    const type        = isSender ? 'offer_retracted' : 'offer_deleted';
+    const msgBody     = isSender
+      ? `@${actor.username} retracted their trade offer`
+      : `@${actor.username} removed a declined trade offer`;
 
-  await db.insert(notifications).values({
-    userId:           otherUserId,
-    type,
-    actorUserId:      myId,
-    actorUsername:    actor.username,
-    actorDisplayName: actor.displayName,
-    actorAvatar:      actor.avatarUrl,
-    offerId:          id,
-    body:             msgBody,
-  });
+    await db.insert(notifications).values({
+      userId:           otherUserId,
+      type,
+      actorUserId:      myId,
+      actorUsername:    actor.username,
+      actorDisplayName: actor.displayName,
+      actorAvatar:      actor.avatarUrl,
+      offerId:          id,
+      body:             msgBody,
+    });
+  }
 
   return NextResponse.json({ ok: true });
 }
