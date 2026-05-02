@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { eq } from 'drizzle-orm';
 import { db } from '@/db';
-import { whitelist, users, items } from '@/db/schema';
+import { whitelist, users, items, notifications } from '@/db/schema';
 
 type State = { error?: string; success?: boolean };
 
@@ -73,6 +73,19 @@ export async function deleteAdminItem(_prev: State, formData: FormData): Promise
 
   try {
     await db.delete(items).where(eq(items.id, itemId));
+    revalidatePath('/admin');
+    return { success: true };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Database error.' };
+  }
+}
+
+export async function deleteNotification(_prev: State, formData: FormData): Promise<State> {
+  const notifId = ((formData.get('notifId') as string) ?? '').trim();
+  if (!notifId) return { error: 'Notification ID required.' };
+
+  try {
+    await db.delete(notifications).where(eq(notifications.id, notifId));
     revalidatePath('/admin');
     return { success: true };
   } catch (err) {

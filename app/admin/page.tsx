@@ -13,6 +13,7 @@ import SignOutButton from './SignOutButton';
 import AdminInventoryGrid from './AdminInventoryGrid';
 import AdminWhitelistTable, { type WhitelistRow } from './AdminWhitelistTable';
 import DeleteUserButton from './DeleteUserButton';
+import TradesPanel from '@/components/TradesPanel';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -63,6 +64,7 @@ export default async function AdminPage() {
   const itemCountMap = new Map(itemCounts.map((r) => [r.userId, Number(r.count)]));
 
   const adminUser = allUsers.find((u) => u.email === SUPERADMIN_EMAIL);
+
   const adminItems: DbItem[] = adminUser
     ? await db.select().from(itemsTable).where(eq(itemsTable.userId, adminUser.id)).orderBy(desc(itemsTable.addedAt))
     : [];
@@ -264,6 +266,12 @@ export default async function AdminPage() {
               addedAt:                item.addedAt.toISOString(),
             }))}
           />
+        </section>
+
+        {/* ─── My Trades ───────────────────────────────────────────────── */}
+        <section>
+          <h2 className="text-lg font-bold text-white mb-4">My Trades</h2>
+          <TradesPanel />
         </section>
       </main>
     </div>

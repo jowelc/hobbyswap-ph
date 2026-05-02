@@ -194,12 +194,6 @@ export default function Navbar({ search = '', onSearchChange, showSearch = true 
                             <span>👤</span> My Profile
                           </Link>
                         )}
-                        <button className="w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition-colors flex items-center gap-2">
-                          <span>🤝</span> My Trades
-                        </button>
-                        <button className="w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition-colors flex items-center gap-2">
-                          <span>⚙️</span> Settings
-                        </button>
                       </div>
                       <div className="py-1 border-t border-slate-800">
                         <button
