@@ -59,6 +59,7 @@ export default function PostItemModal({ onClose, onSave, location, onChangeLocat
   const [storedAiMime, setStoredAiMime] = useState('');
 
   const [estimatedValue, setEstimatedValue] = useState('');
+  const userEnteredPriceRef = useRef(false);
   const [tradePreference, setTradePreference] = useState<TradePreference | ''>('');
   const [notes, setNotes] = useState('');
 
@@ -156,7 +157,7 @@ export default function PostItemModal({ onClose, onSave, location, onChangeLocat
         category: (data.category as Category) ?? '',
         condition: (data.condition as Condition) ?? '',
       });
-      if (data.estimatedValue && !estimatedValue) {
+      if (data.estimatedValue && !userEnteredPriceRef.current) {
         setEstimatedValue(String(data.estimatedValue));
       }
     } catch (err: unknown) {
@@ -531,7 +532,7 @@ export default function PostItemModal({ onClose, onSave, location, onChangeLocat
               min={0}
               required
               value={estimatedValue}
-              onChange={(e) => setEstimatedValue(e.target.value)}
+              onChange={(e) => { userEnteredPriceRef.current = true; setEstimatedValue(e.target.value); }}
               placeholder="e.g. 5000"
               className={inputCls}
             />
