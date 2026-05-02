@@ -79,7 +79,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const myId = await resolveUserId(session.user.email);
   if (!myId) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
-  const body = await req.json() as { status?: string; action?: string; field?: string; value?: boolean };
+  const body = await req.json() as { status?: string; action?: string; field?: string; value?: boolean; url?: string };
 
   // ── Checklist update ──────────────────────────────────────────────────────────
   if (body.action === 'checklist') {
@@ -108,6 +108,39 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       updateData = iAmSender ? { fromReceived: value } : { toReceived: value };
     } else if (field === 'cashSettled') {
       updateData = { cashSettled: value };
+    } else {
+      return NextResponse.json({ error: 'Invalid field' }, { status: 400 });
+    }
+
+    await db.update(tradeOffers).set(updateData).where(eq(tradeOffers.id, id));
+    return NextResponse.json({ ok: true });
+  }
+
+  // ── Screenshot upload ─────────────────────────────────────────────────────────
+  if (body.action === 'screenshot') {
+    const { field, url } = body;
+    if (!url || typeof url !== 'string') return NextResponse.json({ error: 'Invalid url' }, { status: 400 });
+
+    const [offer] = await db
+      .select({ fromUserId: tradeOffers.fromUserId, toUserId: tradeOffers.toUserId, status: tradeOffers.status })
+      .from(tradeOffers)
+      .where(and(
+        eq(tradeOffers.id, id),
+        or(eq(tradeOffers.fromUserId, myId), eq(tradeOffers.toUserId, myId)),
+      ))
+      .limit(1);
+
+    if (!offer || offer.status !== 'accepted') {
+      return NextResponse.json({ error: 'Not found or not accepted' }, { status: 404 });
+    }
+
+    const iAmSender = offer.fromUserId === myId;
+    let updateData: Partial<typeof tradeOffers.$inferInsert>;
+
+    if (field === 'trackingUrl') {
+      updateData = iAmSender ? { fromTrackingUrl: url } : { toTrackingUrl: url };
+    } else if (field === 'cashProofUrl') {
+      updateData = { cashProofUrl: url };
     } else {
       return NextResponse.json({ error: 'Invalid field' }, { status: 400 });
     }

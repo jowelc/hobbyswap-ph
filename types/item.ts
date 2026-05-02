@@ -8,7 +8,7 @@ export type Category =
   | 'WWE Cards'
   | 'Others';
 
-export type Condition = 'Raw' | 'Graded' | 'Sealed' | 'Used' | 'Brand New';
+export type Condition = 'Raw' | 'PSA Graded' | 'BGS Graded' | 'Other Grading';
 
 export type TradePreference =
   | 'Trade Only'

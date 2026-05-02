@@ -13,7 +13,7 @@ const CATEGORIES: Category[] = [
   'Others',
 ];
 
-const CONDITIONS: Condition[] = ['Raw', 'Graded', 'Sealed', 'Used', 'Brand New'];
+const CONDITIONS: Condition[] = ['Raw', 'PSA Graded', 'BGS Graded', 'Other Grading'];
 
 const TRADE_PREFS: TradePreference[] = [
   'Trade Only',

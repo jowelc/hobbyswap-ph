@@ -98,6 +98,9 @@ interface AcceptedOfferRow {
   cashSettled: boolean;
   fromDoneDeal: boolean;
   toDoneDeal: boolean;
+  fromTrackingUrl: string | null;
+  toTrackingUrl: string | null;
+  cashProofUrl: string | null;
   fromTier: string;
   toTier: string;
   iAmSender: boolean;
@@ -164,6 +167,7 @@ export default function ProfileClient({ email, name, image, username, displayNam
   const [showDealSuccess, setShowDealSuccess] = useState(false);
   const [loadingDoneDealId, setLoadingDoneDealId] = useState<string | null>(null);
   const [clickedDoneDeals, setClickedDoneDeals] = useState<Set<string>>(new Set());
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const prevAcceptedIdsRef = useRef<Set<string>>(new Set());
 
   // Load items from API
@@ -456,6 +460,36 @@ export default function ProfileClient({ email, name, image, username, displayNam
         .then((data: AcceptedOfferRow[]) => setAcceptedOffers(Array.isArray(data) ? data : []))
         .catch(() => {});
     }
+  }
+
+  async function handleScreenshotUpload(offerId: string, field: 'trackingUrl' | 'cashProofUrl', file: File) {
+    try {
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve((reader.result as string).split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const uploadRes = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: base64, mimeType: file.type }),
+      });
+      if (!uploadRes.ok) return;
+      const { url } = await uploadRes.json() as { url: string };
+
+      setAcceptedOffers((prev) => prev.map((o) => {
+        if (o.id !== offerId) return o;
+        if (field === 'trackingUrl') return o.iAmSender ? { ...o, fromTrackingUrl: url } : { ...o, toTrackingUrl: url };
+        return { ...o, cashProofUrl: url };
+      }));
+
+      await fetch(`/api/offers/${offerId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'screenshot', field, url }),
+      });
+    } catch {}
   }
 
   async function handleDoneDeal(offerId: string) {
@@ -1005,6 +1039,8 @@ export default function ProfileClient({ email, name, image, username, displayNam
                   const tradeContext     = `${offer.offeredCount} card${offer.offeredCount !== 1 ? 's' : ''} ↔ ${offer.requestedCount} card${offer.requestedCount !== 1 ? 's' : ''}${hasCash ? ` + ₱${cashAbs.toLocaleString()}` : ''}`;
                   const myDoneDeal       = clickedDoneDeals.has(offer.id) || (offer.iAmSender ? offer.fromDoneDeal : offer.toDoneDeal);
                   const theirDoneDeal    = offer.iAmSender ? offer.toDoneDeal : offer.fromDoneDeal;
+                  const myTrackingUrl    = offer.iAmSender ? offer.fromTrackingUrl : offer.toTrackingUrl;
+                  const theirTrackingUrl = offer.iAmSender ? offer.toTrackingUrl   : offer.fromTrackingUrl;
 
                   return (
                     <div key={offer.id} className={`bg-slate-800/60 border rounded-2xl overflow-hidden transition-colors ${allDone ? 'border-green-500/30' : 'border-slate-700/50'}`}>
@@ -1043,6 +1079,38 @@ export default function ProfileClient({ email, name, image, username, displayNam
                             onChange={(v) => handleChecklistUpdate(offer.id, 'myShipped', v)}
                             label="My items shipped / handed off"
                           />
+                          {/* My tracking screenshot upload */}
+                          <div className="ml-8 flex flex-wrap items-center gap-2">
+                            <input
+                              type="file"
+                              id={`tracking-${offer.id}`}
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleScreenshotUpload(offer.id, 'trackingUrl', file);
+                                e.target.value = '';
+                              }}
+                            />
+                            {myTrackingUrl && (
+                              <button
+                                onClick={() => setLightboxUrl(myTrackingUrl)}
+                                className="relative w-12 h-12 rounded-lg overflow-hidden border border-slate-600 hover:border-blue-400 transition-colors flex-shrink-0"
+                              >
+                                <AppImage src={myTrackingUrl} alt="My tracking" fill className="object-cover" unoptimized />
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity">
+                                  <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                </div>
+                              </button>
+                            )}
+                            <button
+                              onClick={() => document.getElementById(`tracking-${offer.id}`)?.click()}
+                              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors border border-dashed border-slate-600 hover:border-slate-500"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                              {myTrackingUrl ? 'Replace tracking' : 'Upload tracking screenshot'}
+                            </button>
+                          </div>
                           {/* Their items shipped (read-only) */}
                           <CheckItem
                             checked={theirShipped}
@@ -1050,16 +1118,65 @@ export default function ProfileClient({ email, name, image, username, displayNam
                             label={`@${otherUsername}'s items shipped / handed off`}
                             waitingLabel={!theirShipped}
                           />
+                          {/* Their tracking screenshot (read-only) */}
+                          {theirTrackingUrl && (
+                            <div className="ml-8 flex items-center gap-2">
+                              <button
+                                onClick={() => setLightboxUrl(theirTrackingUrl)}
+                                className="relative w-12 h-12 rounded-lg overflow-hidden border border-slate-600 hover:border-blue-400 transition-colors flex-shrink-0"
+                              >
+                                <AppImage src={theirTrackingUrl} alt="Their tracking" fill className="object-cover" unoptimized />
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity">
+                                  <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                </div>
+                              </button>
+                              <p className="text-xs text-slate-500">@{otherUsername}'s tracking</p>
+                            </div>
+                          )}
                         </>)}
 
                         {/* Cash settled */}
                         {hasCash && (
+                          <>
                           <CheckItem
                             checked={offer.cashSettled}
                             onChange={(v) => handleChecklistUpdate(offer.id, 'cashSettled', v)}
                             label={`Cash settled — ₱${cashAbs.toLocaleString()} ${iPayCash ? '(you pay)' : '(you receive)'}`}
                             labelAccent={iPayCash ? 'amber' : 'green'}
                           />
+                          {/* Payment proof screenshot */}
+                          <div className="ml-8 flex flex-wrap items-center gap-2">
+                            <input
+                              type="file"
+                              id={`cashproof-${offer.id}`}
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleScreenshotUpload(offer.id, 'cashProofUrl', file);
+                                e.target.value = '';
+                              }}
+                            />
+                            {offer.cashProofUrl && (
+                              <button
+                                onClick={() => setLightboxUrl(offer.cashProofUrl!)}
+                                className="relative w-12 h-12 rounded-lg overflow-hidden border border-slate-600 hover:border-green-400 transition-colors flex-shrink-0"
+                              >
+                                <AppImage src={offer.cashProofUrl} alt="Payment proof" fill className="object-cover" unoptimized />
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity">
+                                  <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                </div>
+                              </button>
+                            )}
+                            <button
+                              onClick={() => document.getElementById(`cashproof-${offer.id}`)?.click()}
+                              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors border border-dashed border-slate-600 hover:border-slate-500"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                              {offer.cashProofUrl ? 'Replace payment proof' : 'Upload payment screenshot'}
+                            </button>
+                          </div>
+                          </>
                         )}
                       </div>
 
@@ -1312,6 +1429,26 @@ export default function ProfileClient({ email, name, image, username, displayNam
               .catch(() => {});
           }}
         />
+      )}
+
+      {/* Screenshot lightbox */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-sm"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <div className="relative max-w-lg w-full mx-4" onClick={(e) => e.stopPropagation()}>
+            <img src={lightboxUrl} alt="Screenshot" className="w-full h-auto rounded-xl object-contain max-h-[85vh]" />
+            <button
+              onClick={() => setLightboxUrl(null)}
+              className="absolute -top-3 -right-3 w-8 h-8 bg-slate-700 hover:bg-slate-600 rounded-full flex items-center justify-center text-white transition-colors border border-slate-600"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Done Deal success overlay */}

@@ -33,12 +33,11 @@ export function cn(...classes: (string | undefined | false | null)[]): string {
 
 export function getConditionColor(condition: string): string {
   switch (condition) {
-    case 'Graded': return 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30';
-    case 'Sealed': return 'bg-green-500/20 text-green-300 border border-green-500/30';
-    case 'Brand New': return 'bg-blue-500/20 text-blue-300 border border-blue-500/30';
-    case 'Raw': return 'bg-purple-500/20 text-purple-300 border border-purple-500/30';
-    case 'Used': return 'bg-slate-500/20 text-slate-300 border border-slate-500/30';
-    default: return 'bg-slate-500/20 text-slate-300 border border-slate-500/30';
+    case 'Raw':          return 'bg-purple-500/20 text-purple-300 border border-purple-500/30';
+    case 'PSA Graded':   return 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30';
+    case 'BGS Graded':   return 'bg-blue-500/20 text-blue-300 border border-blue-500/30';
+    case 'Other Grading':return 'bg-slate-500/20 text-slate-300 border border-slate-500/30';
+    default:             return 'bg-slate-500/20 text-slate-300 border border-slate-500/30';
   }
 }
 
