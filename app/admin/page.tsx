@@ -12,6 +12,7 @@ import AddToWhitelistForm from './AddToWhitelistForm';
 import SignOutButton from './SignOutButton';
 import AdminInventoryGrid from './AdminInventoryGrid';
 import AdminWhitelistTable, { type WhitelistRow } from './AdminWhitelistTable';
+import DeleteUserButton from './DeleteUserButton';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -183,17 +184,18 @@ export default async function AdminPage() {
             </div>
 
             <div className="bg-slate-900 border border-red-500/20 rounded-2xl overflow-hidden">
-              <div className="hidden md:grid grid-cols-[2fr_2fr_1.8fr_1fr] gap-4 px-5 py-3 border-b border-slate-800 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+              <div className="hidden md:grid grid-cols-[2fr_2fr_1.8fr_1fr_auto] gap-4 px-5 py-3 border-b border-slate-800 text-xs font-semibold text-slate-500 uppercase tracking-wide">
                 <span>Trader</span>
                 <span>Email</span>
                 <span>Last Login</span>
                 <span>Joined</span>
+                <span></span>
               </div>
 
               {activeUnwhitelisted.map((user, idx) => (
                 <div
                   key={user.id}
-                  className={`flex flex-col md:grid md:grid-cols-[2fr_2fr_1.8fr_1fr] gap-2 md:gap-4 px-5 py-4 items-start md:items-center ${
+                  className={`flex flex-col md:grid md:grid-cols-[2fr_2fr_1.8fr_1fr_auto] gap-2 md:gap-4 px-5 py-4 items-start md:items-center ${
                     idx !== activeUnwhitelisted.length - 1 ? 'border-b border-slate-800/60' : ''
                   } hover:bg-slate-800/30 transition-colors`}
                 >
@@ -218,6 +220,7 @@ export default async function AdminPage() {
                     <p className="text-xs text-slate-500">{timeAgo(user.lastLoginAt)}</p>
                   </div>
                   <span className="text-xs text-slate-400">{formatDateTime(user.createdAt)}</span>
+                  <DeleteUserButton userId={user.id} />
                 </div>
               ))}
             </div>

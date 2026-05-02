@@ -104,6 +104,7 @@ export default function TradeOfferModal({ targetItem, targetUserId, targetUserna
   const [cashDirection,   setCashDirection]  = useState<'me' | 'them'>((initialCashDiff ?? 0) < 0 ? 'them' : 'me');
   const [message,         setMessage]        = useState('');
   const [submitted,       setSubmitted]      = useState(false);
+  const [submitting,      setSubmitting]     = useState(false);
 
   useEffect(() => {
     fetch('/api/items/mine')
@@ -182,7 +183,8 @@ export default function TradeOfferModal({ targetItem, targetUserId, targetUserna
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!canSubmit) return;
+    if (!canSubmit || submitting) return;
+    setSubmitting(true);
     try {
       await fetch('/api/offers', {
         method: 'POST',
@@ -197,7 +199,9 @@ export default function TradeOfferModal({ targetItem, targetUserId, targetUserna
         }),
       });
       onSent?.();
-    } catch {}
+    } catch {
+      setSubmitting(false);
+    }
     setSubmitted(true);
   }
 
@@ -481,10 +485,12 @@ export default function TradeOfferModal({ targetItem, targetUserId, targetUserna
 
               <button
                 type="submit"
-                disabled={!canSubmit}
+                disabled={!canSubmit || submitting}
                 className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors text-sm"
               >
-                {!canSubmit
+                {submitting
+                  ? 'Sending…'
+                  : !canSubmit
                   ? 'Select cards or add cash to offer'
                   : isCashOnly
                   ? `🤝 Send Cash Offer — ₱${cash.toLocaleString()}`

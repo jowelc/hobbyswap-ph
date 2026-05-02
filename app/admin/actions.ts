@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { eq } from 'drizzle-orm';
 import { db } from '@/db';
-import { whitelist, users } from '@/db/schema';
+import { whitelist, users, items } from '@/db/schema';
 
 type State = { error?: string; success?: boolean };
 
@@ -43,6 +43,36 @@ export async function setUserTier(_prev: State, formData: FormData): Promise<Sta
 
   try {
     await db.update(users).set({ tier }).where(eq(users.id, userId));
+    revalidatePath('/admin');
+    return { success: true };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Database error.' };
+  }
+}
+
+export async function deleteUser(_prev: State, formData: FormData): Promise<State> {
+  const userId = ((formData.get('userId') as string) ?? '').trim();
+  if (!userId) return { error: 'User ID required.' };
+
+  try {
+    const [user] = await db.select({ isWhitelisted: users.isWhitelisted }).from(users).where(eq(users.id, userId)).limit(1);
+    if (!user) return { error: 'User not found.' };
+    if (user.isWhitelisted) return { error: 'Cannot delete a whitelisted user.' };
+
+    await db.delete(users).where(eq(users.id, userId));
+    revalidatePath('/admin');
+    return { success: true };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Database error.' };
+  }
+}
+
+export async function deleteAdminItem(_prev: State, formData: FormData): Promise<State> {
+  const itemId = ((formData.get('itemId') as string) ?? '').trim();
+  if (!itemId) return { error: 'Item ID required.' };
+
+  try {
+    await db.delete(items).where(eq(items.id, itemId));
     revalidatePath('/admin');
     return { success: true };
   } catch (err) {

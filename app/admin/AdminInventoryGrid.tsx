@@ -7,6 +7,7 @@ import PostItemModal from '@/components/PostItemModal';
 import { InventoryItem } from '@/types/inventoryItem';
 import { Location } from '@/types/item';
 import { formatCurrency } from '@/lib/utils';
+import { deleteAdminItem } from './actions';
 
 interface Props {
   initialItems: InventoryItem[];
@@ -17,6 +18,8 @@ export default function AdminInventoryGrid({ initialItems, location }: Props) {
   const [items, setItems] = useState<InventoryItem[]>(initialItems);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   async function saveItem(item: InventoryItem) {
     try {
@@ -36,6 +39,16 @@ export default function AdminInventoryGrid({ initialItems, location }: Props) {
   function onItemCreated(item: InventoryItem) {
     setItems((prev) => [item, ...prev]);
     setShowAddModal(false);
+  }
+
+  async function handleDelete(itemId: string) {
+    setDeletingId(itemId);
+    const fd = new FormData();
+    fd.append('itemId', itemId);
+    await deleteAdminItem({}, fd);
+    setItems((prev) => prev.filter((i) => i.id !== itemId));
+    setConfirmDeleteId(null);
+    setDeletingId(null);
   }
 
   return (
@@ -78,13 +91,37 @@ export default function AdminInventoryGrid({ initialItems, location }: Props) {
                 {item.isForTrade ? 'For Trade' : 'Not Available'}
               </span>
             </div>
-            <div className="px-2.5 pb-2.5">
+            <div className="px-2.5 pb-2.5 space-y-1.5">
               <button
                 onClick={() => setEditingItem(item)}
                 className="w-full text-[10px] font-semibold text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg py-1.5 transition-colors border border-slate-700 hover:border-slate-600"
               >
                 ✏️ Edit
               </button>
+              {confirmDeleteId === item.id ? (
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => handleDelete(item.id)}
+                    disabled={deletingId === item.id}
+                    className="flex-1 text-[10px] font-semibold text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-lg py-1.5 transition-colors disabled:opacity-50"
+                  >
+                    {deletingId === item.id ? '…' : 'Confirm'}
+                  </button>
+                  <button
+                    onClick={() => setConfirmDeleteId(null)}
+                    className="flex-1 text-[10px] font-semibold text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg py-1.5 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmDeleteId(item.id)}
+                  className="w-full text-[10px] font-semibold text-slate-500 hover:text-red-400 bg-slate-800 hover:bg-red-500/10 border border-slate-700 hover:border-red-500/30 rounded-lg py-1.5 transition-colors"
+                >
+                  🗑️ Delete
+                </button>
+              )}
             </div>
           </div>
         ))}
