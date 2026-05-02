@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import Link from 'next/link';
 import AppImage from './AppImage';
 import ProfileCompletionModal, { ProfileFields, parsePaymentMethods } from './ProfileCompletionModal';
 
@@ -21,6 +22,17 @@ interface OfferNotification {
   requestedCount: number;
   cashDiff: number;
   message: string;
+  readAt: string | null;
+  createdAt: string;
+}
+
+interface SysNotification {
+  id: string;
+  type: string;
+  actorUsername: string;
+  actorDisplayName: string;
+  actorAvatar: string;
+  body: string;
   readAt: string | null;
   createdAt: string;
 }
@@ -50,6 +62,7 @@ function missingProfileFields(p: ProfileStatus): string[] {
 
 export default function NotificationBell() {
   const [offers,              setOffers]              = useState<OfferNotification[]>([]);
+  const [sysNotifs,           setSysNotifs]           = useState<SysNotification[]>([]);
   const [profile,             setProfile]             = useState<ProfileStatus | null>(null);
   const [watchedItems,        setWatchedItems]        = useState<WatchlistItem[]>([]);
   const [open,                setOpen]                = useState(false);
@@ -57,10 +70,11 @@ export default function NotificationBell() {
   const ref = useRef<HTMLDivElement>(null);
 
   const fetchAll = useCallback(async () => {
-    const [offersRes, profileRes, watchRes] = await Promise.allSettled([
+    const [offersRes, profileRes, watchRes, notifsRes] = await Promise.allSettled([
       fetch('/api/offers'),
       fetch('/api/users/me'),
       fetch('/api/watchlist'),
+      fetch('/api/notifications'),
     ]);
     if (offersRes.status === 'fulfilled' && offersRes.value.ok) {
       setOffers(await offersRes.value.json());
@@ -75,6 +89,9 @@ export default function NotificationBell() {
     }
     if (watchRes.status === 'fulfilled' && watchRes.value.ok) {
       setWatchedItems(await watchRes.value.json());
+    }
+    if (notifsRes.status === 'fulfilled' && notifsRes.value.ok) {
+      setSysNotifs(await notifsRes.value.json());
     }
   }, []);
 
@@ -93,21 +110,29 @@ export default function NotificationBell() {
   }, []);
 
   const unread              = offers.filter((o) => !o.readAt).length;
+  const unreadSys           = sysNotifs.filter((n) => !n.readAt).length;
   const unavailableWatched  = watchedItems.filter((w) => !w.isForTrade);
   const missing             = profile ? missingProfileFields(profile) : [];
   const hasIncompleteProfile = missing.length > 0;
-  const totalBadge          = unread + unavailableWatched.length;
+  const totalBadge          = unread + unreadSys + unavailableWatched.length;
 
   async function handleToggle() {
     const wasOpen = open;
     setOpen((v) => !v);
-    if (!wasOpen && unread > 0) {
-      try {
-        await fetch('/api/offers/read', { method: 'POST' });
-        setOffers((prev) =>
-          prev.map((o) => ({ ...o, readAt: o.readAt ?? new Date().toISOString() }))
-        );
-      } catch {}
+    if (!wasOpen) {
+      const now = new Date().toISOString();
+      if (unread > 0) {
+        try {
+          await fetch('/api/offers/read', { method: 'POST' });
+          setOffers((prev) => prev.map((o) => ({ ...o, readAt: o.readAt ?? now })));
+        } catch {}
+      }
+      if (unreadSys > 0) {
+        try {
+          await fetch('/api/notifications', { method: 'POST' });
+          setSysNotifs((prev) => prev.map((n) => ({ ...n, readAt: n.readAt ?? now })));
+        } catch {}
+      }
     }
   }
 
@@ -186,17 +211,44 @@ export default function NotificationBell() {
               </div>
             ))}
 
+            {/* ── System notifications (retract / delete) ── */}
+            {sysNotifs.map((n) => (
+              <div
+                key={n.id}
+                className={`flex items-start gap-3 px-4 py-3 ${!n.readAt ? 'bg-slate-700/30' : ''}`}
+              >
+                <div className="relative w-9 h-9 rounded-full overflow-hidden bg-slate-700 flex-shrink-0">
+                  {n.actorAvatar ? (
+                    <AppImage src={n.actorAvatar} alt={n.actorDisplayName} fill className="object-cover" unoptimized />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-white font-bold text-sm bg-gradient-to-br from-slate-500 to-slate-700">
+                      {(n.actorDisplayName || n.actorUsername)[0]?.toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-sm text-slate-300 leading-snug">{n.body}</p>
+                    {!n.readAt && <span className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />}
+                  </div>
+                  <p className="text-[10px] text-slate-600 mt-1">{timeAgo(n.createdAt)}</p>
+                </div>
+              </div>
+            ))}
+
             {/* ── Trade offer notifications ── */}
-            {offers.length === 0 && !hasIncompleteProfile && unavailableWatched.length === 0 ? (
+            {offers.length === 0 && sysNotifs.length === 0 && !hasIncompleteProfile && unavailableWatched.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 gap-2 text-slate-500">
                 <span className="text-3xl">🤝</span>
                 <p className="text-sm">No notifications yet</p>
               </div>
             ) : offers.length === 0 ? null : (
               offers.map((offer) => (
-                <div
+                <Link
                   key={offer.id}
-                  className={`px-4 py-3 transition-colors ${!offer.readAt ? 'bg-blue-500/5' : ''}`}
+                  href={`/profile?offer=${offer.id}`}
+                  onClick={() => setOpen(false)}
+                  className={`block px-4 py-3 transition-colors hover:bg-slate-800/60 ${!offer.readAt ? 'bg-blue-500/5' : ''}`}
                 >
                   <div className="flex gap-3 items-start">
                     <div className="relative w-9 h-9 rounded-full overflow-hidden bg-slate-700 flex-shrink-0">
@@ -236,11 +288,11 @@ export default function NotificationBell() {
                       <p className="text-[10px] text-slate-600 mt-1">{timeAgo(offer.createdAt)}</p>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))
             )}
 
-            {offers.length === 0 && (hasIncompleteProfile || unavailableWatched.length > 0) && (
+            {offers.length === 0 && sysNotifs.length === 0 && (hasIncompleteProfile || unavailableWatched.length > 0) && (
               <div className="flex flex-col items-center justify-center py-8 gap-2 text-slate-500">
                 <span className="text-2xl">🤝</span>
                 <p className="text-sm">No trade offers yet</p>

@@ -53,7 +53,28 @@ export const tradeOffers = pgTable('trade_offers', {
   message:          text('message').notNull().default(''),
   status:           text('status').notNull().default('pending'),
   readAt:           timestamp('read_at', { withTimezone: true }),
+  fromShipped:      boolean('from_shipped').notNull().default(false),
+  toShipped:        boolean('to_shipped').notNull().default(false),
+  fromReceived:     boolean('from_received').notNull().default(false),
+  toReceived:       boolean('to_received').notNull().default(false),
+  cashSettled:      boolean('cash_settled').notNull().default(false),
+  fromDoneDeal:     boolean('from_done_deal').notNull().default(false),
+  toDoneDeal:       boolean('to_done_deal').notNull().default(false),
   createdAt:        timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const notifications = pgTable('notifications', {
+  id:              uuid('id').primaryKey().defaultRandom(),
+  userId:          uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  type:            text('type').notNull(),
+  actorUserId:     uuid('actor_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  actorUsername:   text('actor_username').notNull().default(''),
+  actorDisplayName: text('actor_display_name').notNull().default(''),
+  actorAvatar:     text('actor_avatar').notNull().default(''),
+  offerId:         text('offer_id'),
+  body:            text('body').notNull().default(''),
+  readAt:          timestamp('read_at', { withTimezone: true }),
+  createdAt:       timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const watchlist = pgTable('watchlist', {
@@ -71,6 +92,7 @@ export const messages = pgTable('messages', {
   createdAt:  timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
+export type DbNotification = typeof notifications.$inferSelect;
 export type DbWatchlist   = typeof watchlist.$inferSelect;
 export type DbUser      = typeof users.$inferSelect;
 export type NewUser     = typeof users.$inferInsert;

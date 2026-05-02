@@ -15,11 +15,13 @@ interface ApiMessage {
 interface Props {
   traderUserId: string;
   traderUsername: string;
+  traderDisplayName?: string;
   traderAvatar: string;
+  tradeContext?: string;
   onClose: () => void;
 }
 
-export default function ChatModal({ traderUserId, traderUsername, traderAvatar, onClose }: Props) {
+export default function ChatModal({ traderUserId, traderUsername, traderDisplayName, traderAvatar, tradeContext, onClose }: Props) {
   const { data: session } = useSession();
   const currentUserId = (session?.user as { id?: string } | null)?.id;
 
@@ -83,13 +85,22 @@ export default function ChatModal({ traderUserId, traderUsername, traderAvatar, 
       <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl flex flex-col overflow-hidden h-[500px]">
         {/* Header */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-800 flex-shrink-0">
-          <div className="relative w-9 h-9 rounded-full overflow-hidden bg-slate-700">
-            <AppImage src={traderAvatar} alt={traderUsername} fill className="object-cover" unoptimized />
+          <div className="relative w-9 h-9 rounded-full overflow-hidden bg-slate-700 flex-shrink-0">
+            {traderAvatar ? (
+              <AppImage src={traderAvatar} alt={traderDisplayName ?? traderUsername} fill className="object-cover" unoptimized />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-white font-bold text-sm bg-gradient-to-br from-blue-500 to-purple-600">
+                {(traderDisplayName || traderUsername)[0]?.toUpperCase()}
+              </div>
+            )}
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-white">@{traderUsername}</p>
+            {tradeContext && (
+              <p className="text-[11px] text-slate-500 truncate">{tradeContext}</p>
+            )}
           </div>
-          <button onClick={onClose} className="ml-auto text-slate-400 hover:text-white transition-colors p-1">
+          <button onClick={onClose} className="ml-auto text-slate-400 hover:text-white transition-colors p-1 flex-shrink-0">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>

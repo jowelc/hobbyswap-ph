@@ -139,7 +139,7 @@ export default function HomePage() {
             Philippines&apos; #1 Collectible Trade Platform
           </div>
 
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black text-white leading-[1.05] tracking-tight mb-6">
+          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-white leading-[1.05] tracking-tight mb-6">
             Swap.{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
               Trade.

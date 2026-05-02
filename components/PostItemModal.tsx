@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { InventoryItem } from '@/types/inventoryItem';
 import { Category, Condition, TradePreference, Location } from '@/types/item';
 import { convertIfHeic } from '@/lib/heic';
+import { parsePrice } from '@/lib/utils';
 
 const CATEGORIES: Category[] = [
   'Basketball Cards', 'Pokemon Cards', 'One Piece Cards', 'Football Cards',
@@ -301,7 +302,7 @@ export default function PostItemModal({ onClose, onSave, location, onChangeLocat
           name:                   resolvedName,
           category:               resolvedCategory,
           condition:              resolvedCondition,
-          estimatedValue:         parseInt(estimatedValue),
+          estimatedValue:         parsePrice(estimatedValue),
           location,
           tradePreference,
           frontImageUrl:          frontCloudUrl,

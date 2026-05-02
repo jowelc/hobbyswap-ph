@@ -175,7 +175,7 @@ export default function Navbar({ search = '', onSearchChange, showSearch = true 
 
                   {/* Dropdown menu */}
                   {userMenuOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-56 bg-slate-900 border border-slate-700 rounded-xl shadow-xl overflow-hidden">
+                    <div className="absolute right-0 top-full mt-2 w-48 sm:w-56 bg-slate-900 border border-slate-700 rounded-xl shadow-xl overflow-hidden">
                       <div className="px-4 py-3 border-b border-slate-800">
                         <p className="text-sm font-semibold text-white truncate">
                           {session.user?.name ?? 'Trader'}

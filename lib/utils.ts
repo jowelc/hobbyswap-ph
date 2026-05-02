@@ -1,3 +1,9 @@
+/** Safely parse a price string to an integer PHP amount.
+ *  Handles commas ("1,500"), decimals ("1500.5"), and exponential notation ("1.5e3"). */
+export function parsePrice(v: string | number): number {
+  return Math.round(Number(String(v).replace(/,/g, ''))) || 0;
+}
+
 export function formatCurrency(value: number): string {
   return new Intl.NumberFormat('en-PH', {
     style: 'currency',

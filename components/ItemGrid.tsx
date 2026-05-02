@@ -36,7 +36,7 @@ function SkeletonCard() {
 export default function ItemGrid({ items, onReset, isLoading = false, currentUserId, watchedItemIds, onToggleWatch }: Props) {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-4">
         {Array.from({ length: 10 }).map((_, i) => (
           <SkeletonCard key={i} />
         ))}
@@ -49,7 +49,7 @@ export default function ItemGrid({ items, onReset, isLoading = false, currentUse
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-4">
       {items.map((item) => (
         <ItemCard
           key={item.id}

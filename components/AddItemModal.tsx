@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { InventoryItem } from '@/types/inventoryItem';
 import { Category, Condition, TradePreference, Location } from '@/types/item';
 import { convertIfHeic } from '@/lib/heic';
+import { parsePrice } from '@/lib/utils';
 
 const CATEGORIES: Category[] = [
   'Basketball Cards', 'Pokemon Cards', 'One Piece Cards', 'Football Cards',
@@ -69,7 +70,7 @@ export default function AddItemModal({ onClose, onSave, existing }: Props) {
       brand: form.brand.trim() || undefined,
       year: form.year ? parseInt(form.year) : undefined,
       condition: form.condition as Condition,
-      estimatedValue: parseInt(form.estimatedValue),
+      estimatedValue: parsePrice(form.estimatedValue),
       location: form.location as Location,
       tradePreference: form.tradePreference as TradePreference,
       description: form.description.trim(),
