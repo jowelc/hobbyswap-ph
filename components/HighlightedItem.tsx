@@ -27,7 +27,7 @@ export default function HighlightedItem({ item, ownerUserId, ownerUsername, owne
   const [imgLoaded, setImgLoaded] = useState(false);
 
   const fallback = '/card-placeholder-front.svg';
-  const hasBack = !!item.backImageUrl && !backImgError;
+  const hasBack = !!item.backImageUrl && item.backImageUrl.startsWith('http') && !backImgError;
 
   const currentImg = showBack && hasBack
     ? item.backImageUrl
@@ -48,8 +48,8 @@ export default function HighlightedItem({ item, ownerUserId, ownerUsername, owne
             <div
               className="relative w-full max-w-xs aspect-[5/7] rounded-xl overflow-hidden cursor-zoom-in group bg-slate-800"
               onClick={() => setLightboxOpen(true)}
-              onMouseEnter={() => handleImgChange(true)}
-              onMouseLeave={() => handleImgChange(false)}
+              onMouseEnter={() => { if (hasBack) handleImgChange(true); }}
+              onMouseLeave={() => { if (hasBack) handleImgChange(false); }}
             >
               {!imgLoaded && (
                 <div className="absolute inset-0 z-10 bg-slate-700 animate-pulse rounded-xl" />

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { auth } from '@/auth';
 import { db } from '@/db';
 import { items, users } from '@/db/schema';
@@ -31,6 +31,7 @@ export async function GET(req: NextRequest) {
       avatarUrl:              users.avatarUrl,
       ownerLookingFor:        users.lookingFor,
       ownerLocation:          users.location,
+      watcherCount:           sql<number>`(select count(*) from watchlist where watchlist.item_id = ${items.id})`.mapWith(Number),
     })
     .from(items)
     .innerJoin(users, eq(items.userId, users.id))

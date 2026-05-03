@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import ImageLightbox from './ImageLightbox';
 
@@ -29,7 +30,7 @@ export default function FlipCardImage({
   const aspect = aspectRatio === 'card' ? 'aspect-[5/7]' : 'aspect-square';
   const fallback = '/card-placeholder-front.svg';
 
-  const hasBack = !!backUrl && !backError;
+  const hasBack = !!backUrl && backUrl.startsWith('http') && !backError;
 
   const resolvedFront = frontError || !frontUrl ? fallback : frontUrl;
   const resolvedBack  = hasBack ? backUrl : resolvedFront;
@@ -91,12 +92,13 @@ export default function FlipCardImage({
         )}
       </div>
 
-      {lightboxOpen && (
+      {lightboxOpen && createPortal(
         <ImageLightbox
           images={lightboxImages}
           initialIndex={lightboxIndex}
           onClose={() => setLightboxOpen(false)}
-        />
+        />,
+        document.body,
       )}
     </>
   );

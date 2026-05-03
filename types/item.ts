@@ -49,6 +49,7 @@ export interface Item {
   backImageUrl: string;
   createdAt: string;
   tags: string[];
+  watcherCount?: number;
 }
 
 export interface FilterState {

@@ -53,10 +53,12 @@ export default function UserProfileHeader({ user }: Props) {
           <p className="text-sm text-slate-400">@{user.username}</p>
 
           <div className="flex flex-wrap gap-4 text-sm">
-            <div className="flex items-center gap-1.5">
-              <RatingStars rating={user.rating} size="sm" />
-              <span className="text-slate-400 text-xs">({user.reviews.length} reviews)</span>
-            </div>
+            {user.reviews.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <RatingStars rating={user.rating} size="sm" />
+                <span className="text-slate-400 text-xs">({user.reviews.length} reviews)</span>
+              </div>
+            )}
             <div className="flex items-center gap-1.5 text-slate-400">
               <span className="text-green-400 font-semibold text-base">{user.successfulTrades}</span>
               <span className="text-xs">successful trades</span>
