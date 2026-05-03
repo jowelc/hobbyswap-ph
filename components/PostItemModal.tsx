@@ -168,18 +168,30 @@ export default function PostItemModal({ onClose, onSave, location, onChangeLocat
 
   async function uploadToCloud(base64: string, mime: string, which: 'front' | 'back') {
     which === 'front' ? setUploadingFront(true) : setUploadingBack(true);
+    let lastError = '';
     try {
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64: base64, mimeType: mime }),
-      });
-      if (res.ok) {
-        const { url } = await res.json() as { url: string };
-        which === 'front' ? setFrontCloudUrl(url) : setBackCloudUrl(url);
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imageBase64: base64, mimeType: mime }),
+          });
+          if (res.ok) {
+            const { url } = await res.json() as { url: string };
+            which === 'front' ? setFrontCloudUrl(url) : setBackCloudUrl(url);
+            return;
+          }
+          const body = await res.text().catch(() => '');
+          console.error(`[upload] ${which} attempt ${attempt} failed ${res.status}:`, body);
+          lastError = `Image upload failed (${res.status}). Please re-select the image.`;
+        } catch (err) {
+          console.error(`[upload] ${which} attempt ${attempt} error:`, err);
+          lastError = 'Image upload failed. Please check your connection and re-select the image.';
+        }
+        if (attempt < 3) await new Promise(r => setTimeout(r, 1000 * attempt));
       }
-    } catch {
-      // silent — error surfaces at submit time
+      setFormError(lastError);
     } finally {
       which === 'front' ? setUploadingFront(false) : setUploadingBack(false);
     }
@@ -192,8 +204,8 @@ export default function PostItemModal({ onClose, onSave, location, onChangeLocat
     setStoredBase64(base64);
     setStoredMime(file.type);
 
-    // Compress to ≤2000px JPEG before uploading to stay under Vercel's 4.5 MB body limit
-    const { base64: uploadBase64, mimeType: uploadMime } = await compressForAI(file, 2000);
+    // Compress to ≤1600px JPEG before uploading to stay under Vercel's 4.5 MB body limit
+    const { base64: uploadBase64, mimeType: uploadMime } = await compressForAI(file, 1600, 0.8);
     void uploadToCloud(uploadBase64, uploadMime, 'front');
 
     // Compress to ≤1024px JPEG before sending to AI
@@ -210,8 +222,8 @@ export default function PostItemModal({ onClose, onSave, location, onChangeLocat
     setBackBase64(base64);
     setBackMime(file.type);
 
-    // Compress to ≤2000px JPEG before uploading to stay under Vercel's 4.5 MB body limit
-    const { base64: uploadBase64, mimeType: uploadMime } = await compressForAI(file, 2000);
+    // Compress to ≤1600px JPEG before uploading to stay under Vercel's 4.5 MB body limit
+    const { base64: uploadBase64, mimeType: uploadMime } = await compressForAI(file, 1600, 0.8);
     void uploadToCloud(uploadBase64, uploadMime, 'back');
   }
 
