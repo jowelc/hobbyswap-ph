@@ -544,21 +544,30 @@ function InventoryCard({
         </div>
       </div>
 
-      {/* For trade toggle */}
+      {/* For trade radio */}
       <div className="px-2.5 pb-2.5 space-y-2">
-        <button
-          onClick={onToggle}
-          className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-semibold transition-all border ${
-            item.isForTrade
-              ? 'bg-green-500/15 text-green-300 border-green-500/30 hover:bg-green-500/25'
-              : 'bg-slate-700/40 text-slate-400 border-slate-600/30 hover:bg-slate-700/60'
-          }`}
-        >
-          <span>{item.isForTrade ? '✓ For Trade' : '✗ Not Available'}</span>
-          <div className={`w-9 h-5 rounded-full relative transition-colors flex-shrink-0 ${item.isForTrade ? 'bg-green-500' : 'bg-slate-600'}`}>
-            <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${item.isForTrade ? 'left-[18px]' : 'left-0.5'}`} />
-          </div>
-        </button>
+        <div className="flex rounded-xl overflow-hidden border border-slate-700 text-[10px] font-semibold">
+          <button
+            onClick={() => { if (!item.isForTrade) onToggle(); }}
+            className={`flex-1 py-2 transition-colors ${
+              item.isForTrade
+                ? 'bg-green-500/20 text-green-300'
+                : 'text-slate-500 hover:text-slate-300 hover:bg-slate-700/40'
+            }`}
+          >
+            ✓ For Trade
+          </button>
+          <button
+            onClick={() => { if (item.isForTrade) onToggle(); }}
+            className={`flex-1 py-2 border-l border-slate-700 transition-colors ${
+              !item.isForTrade
+                ? 'bg-slate-600/40 text-slate-300'
+                : 'text-slate-500 hover:text-slate-300 hover:bg-slate-700/40'
+            }`}
+          >
+            ✗ Not Available
+          </button>
+        </div>
 
         <div className="flex gap-1.5">
           <button

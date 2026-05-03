@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { eq, sql } from 'drizzle-orm';
+import { eq, sql, and } from 'drizzle-orm';
 import { auth } from '@/auth';
 import { db } from '@/db';
 import { items, users } from '@/db/schema';
@@ -35,7 +35,11 @@ export async function GET(req: NextRequest) {
     })
     .from(items)
     .innerJoin(users, eq(items.userId, users.id))
-    .where(username ? eq(users.username, username) : undefined)
+    .where(
+      username
+        ? eq(users.username, username)
+        : eq(items.isForTrade, true)
+    )
     .orderBy(items.addedAt);
 
   return NextResponse.json(rows.map((r) => ({ ...r, addedAt: r.addedAt.toISOString() })));
