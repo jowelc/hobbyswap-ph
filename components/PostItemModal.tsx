@@ -191,9 +191,12 @@ export default function PostItemModal({ onClose, onSave, location, onChangeLocat
     const base64 = await fileToBase64(file);
     setStoredBase64(base64);
     setStoredMime(file.type);
-    void uploadToCloud(base64, file.type, 'front');
 
-    // Compress to ≤1024px JPEG before sending to AI to stay under Vercel's 4.5 MB body limit
+    // Compress to ≤2000px JPEG before uploading to stay under Vercel's 4.5 MB body limit
+    const { base64: uploadBase64, mimeType: uploadMime } = await compressForAI(file, 2000);
+    void uploadToCloud(uploadBase64, uploadMime, 'front');
+
+    // Compress to ≤1024px JPEG before sending to AI
     const { base64: aiBase64, mimeType: aiMime } = await compressForAI(file);
     setStoredAiBase64(aiBase64);
     setStoredAiMime(aiMime);
@@ -206,7 +209,10 @@ export default function PostItemModal({ onClose, onSave, location, onChangeLocat
     const base64 = await fileToBase64(file);
     setBackBase64(base64);
     setBackMime(file.type);
-    void uploadToCloud(base64, file.type, 'back');
+
+    // Compress to ≤2000px JPEG before uploading to stay under Vercel's 4.5 MB body limit
+    const { base64: uploadBase64, mimeType: uploadMime } = await compressForAI(file, 2000);
+    void uploadToCloud(uploadBase64, uploadMime, 'back');
   }
 
   async function handleEnhance(which: 'front' | 'back') {
