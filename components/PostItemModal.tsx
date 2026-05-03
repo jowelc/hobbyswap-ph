@@ -184,7 +184,9 @@ export default function PostItemModal({ onClose, onSave, location, onChangeLocat
           }
           const body = await res.text().catch(() => '');
           console.error(`[upload] ${which} attempt ${attempt} failed ${res.status}:`, body);
-          lastError = `Image upload failed (${res.status}). Please re-select the image.`;
+          let detail = '';
+          try { detail = JSON.parse(body).error ?? ''; } catch { detail = body; }
+          lastError = `Image upload failed (${res.status}${detail ? ': ' + detail : ''}). Please re-select the image.`;
         } catch (err) {
           console.error(`[upload] ${which} attempt ${attempt} error:`, err);
           lastError = 'Image upload failed. Please check your connection and re-select the image.';
