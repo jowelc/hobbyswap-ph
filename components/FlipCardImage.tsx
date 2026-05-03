@@ -51,8 +51,8 @@ export default function FlipCardImage({
     <>
       <div
         className={`relative ${aspect} w-full overflow-hidden rounded-xl group cursor-zoom-in select-none ${className}`}
-        onMouseEnter={() => { setShowBack(true); setImgLoaded(false); }}
-        onMouseLeave={() => { setShowBack(false); setImgLoaded(false); }}
+        onMouseEnter={() => { if (hasBack) { setShowBack(true); setImgLoaded(false); } }}
+        onMouseLeave={() => { if (hasBack) { setShowBack(false); setImgLoaded(false); } }}
         onClick={openLightbox}
       >
         {!imgLoaded && (
@@ -62,7 +62,7 @@ export default function FlipCardImage({
           src={currentUrl}
           alt={showBack ? `${alt} - Back` : alt}
           fill
-          className={`object-cover transition-all duration-300 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
+          className={`object-cover transition-all duration-300 group-hover:scale-105 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
           onLoad={() => setImgLoaded(true)}
           onError={() => { showBack ? setBackError(true) : setFrontError(true); setImgLoaded(true); }}
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

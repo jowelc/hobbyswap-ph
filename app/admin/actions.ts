@@ -99,7 +99,7 @@ export async function removeFromWhitelist(_prev: State, formData: FormData): Pro
 
   try {
     await db.delete(whitelist).where(eq(whitelist.email, email));
-    await db.update(users).set({ isWhitelisted: false }).where(eq(users.email, email));
+    await db.update(users).set({ isWhitelisted: false, tier: 'verified' }).where(eq(users.email, email));
     revalidatePath('/admin');
     return { success: true };
   } catch (err) {

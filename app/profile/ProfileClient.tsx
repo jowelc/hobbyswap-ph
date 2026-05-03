@@ -523,7 +523,7 @@ function InventoryCard({
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   return (
-    <div className={`bg-slate-800/60 border rounded-2xl overflow-hidden flex flex-col transition-all ${item.isForTrade ? 'border-slate-700/50' : 'border-slate-700/30 opacity-60'}`}>
+    <div className={`bg-slate-800/60 border rounded-2xl overflow-hidden flex flex-col transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/40 ${item.isForTrade ? 'border-slate-700/50 hover:border-slate-600' : 'border-slate-700/30 opacity-60'}`}>
       {/* Image */}
       <div className="p-2.5 pb-0">
         <FlipCardImage
