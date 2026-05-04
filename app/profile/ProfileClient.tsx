@@ -295,8 +295,13 @@ export default function ProfileClient({ email, name, image, username, displayNam
                     >
                       <span>{emailNotificationsEnabled ? '🔔' : '🔕'}</span>
                       <span>Email notifications {emailNotificationsEnabled ? 'on' : 'off'}</span>
-                      <span className={`w-7 h-4 rounded-full relative flex-shrink-0 transition-colors ${emailNotificationsEnabled ? 'bg-emerald-500' : 'bg-slate-600'}`}>
-                        <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-transform ${emailNotificationsEnabled ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
+                      <span
+                        className={`relative inline-block w-8 h-4 rounded-full flex-shrink-0 transition-colors duration-200 ${emailNotificationsEnabled ? 'bg-emerald-500' : 'bg-slate-600'}`}
+                        style={{ minWidth: '2rem' }}
+                      >
+                        <span
+                          className={`absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white shadow transition-transform duration-200 ${emailNotificationsEnabled ? 'translate-x-4' : 'translate-x-0'}`}
+                        />
                       </span>
                     </button>
                   </div>
