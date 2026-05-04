@@ -3,6 +3,7 @@ import { eq, and } from 'drizzle-orm';
 import { auth } from '@/auth';
 import { db } from '@/db';
 import { items, users, watchlist, notifications } from '@/db/schema';
+import { maybeEmailNotification } from '@/lib/email';
 
 async function resolveUserId(email: string): Promise<string | null> {
   const [user] = await db
@@ -46,6 +47,8 @@ async function notifyWatchers(
       body,
     })),
   );
+
+  await Promise.all(targets.map(uid => maybeEmailNotification(uid, type, body)));
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

@@ -3,6 +3,7 @@ import { eq, and, inArray, or } from 'drizzle-orm';
 import { auth } from '@/auth';
 import { db } from '@/db';
 import { tradeOffers, users, items, notifications } from '@/db/schema';
+import { maybeEmailNotification } from '@/lib/email';
 
 async function resolveUserId(email: string): Promise<string | null> {
   const [user] = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
@@ -207,6 +208,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         .where(eq(users.id, myId))
         .limit(1);
 
+      const dealBody = `@${actor.username} confirmed Done Deal — trade complete! 🤝`;
       await db.insert(notifications).values({
         userId:           otherUserId,
         type:             'deal_done',
@@ -215,8 +217,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         actorDisplayName: actor.displayName,
         actorAvatar:      actor.avatarUrl,
         offerId:          id,
-        body:             `@${actor.username} confirmed Done Deal — trade complete! 🤝`,
+        body:             dealBody,
       });
+      await maybeEmailNotification(otherUserId, 'deal_done', dealBody);
 
       return NextResponse.json({ ok: true, completed: true });
     }
@@ -247,6 +250,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     .limit(1);
 
   if (status === 'accepted') {
+    const acceptBody = `@${actor.username} accepted your trade offer`;
     await db.insert(notifications).values({
       userId:           offerRow.fromUserId,
       type:             'offer_accepted',
@@ -255,9 +259,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       actorDisplayName: actor.displayName,
       actorAvatar:      actor.avatarUrl,
       offerId:          id,
-      body:             `@${actor.username} accepted your trade offer`,
+      body:             acceptBody,
     });
+    await maybeEmailNotification(offerRow.fromUserId, 'offer_accepted', acceptBody);
   } else {
+    const declineBody = `@${actor.username} declined your trade offer`;
     await db.insert(notifications).values({
       userId:           offerRow.fromUserId,
       type:             'offer_declined',
@@ -266,8 +272,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       actorDisplayName: actor.displayName,
       actorAvatar:      actor.avatarUrl,
       offerId:          id,
-      body:             `@${actor.username} declined your trade offer`,
+      body:             declineBody,
     });
+    await maybeEmailNotification(offerRow.fromUserId, 'offer_declined', declineBody);
   }
 
   return NextResponse.json({ ok: true, status });
@@ -324,6 +331,7 @@ export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id:
       offerId:          id,
       body:             msgBody,
     });
+    await maybeEmailNotification(otherUserId, type, msgBody);
   }
 
   return NextResponse.json({ ok: true });

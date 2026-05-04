@@ -48,6 +48,8 @@ interface ProfileMeta {
 const EMPTY_META: ProfileMeta = { bio: '', location: '', lookingFor: '', paymentDetails: '' };
 
 
+
+
 export default function ProfileClient({ email, name, image, username, displayName, tier }: Props) {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [watchlist, setWatchlist] = useState<WatchlistEntry[]>([]);
@@ -60,6 +62,7 @@ export default function ProfileClient({ email, name, image, username, displayNam
   const [draftPayment, setDraftPayment] = useState<PaymentMethod>({ name: '', type: 'GCash', number: '' });
   const [locationGateOpen, setLocationGateOpen] = useState(false);
   const [postLocation, setPostLocation] = useState<Location | null>(null);
+  const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(false);
 
   // Load items from API
   useEffect(() => {
@@ -92,6 +95,7 @@ export default function ProfileClient({ email, name, image, username, displayNam
         setMeta(loaded);
         setMetaDraft(loaded);
         setPaymentDraftMethods(parsePaymentMethods(loaded.paymentDetails));
+        setEmailNotificationsEnabled(!!(u.emailNotificationsEnabled as boolean));
       })
       .catch(() => {});
   }, []);
@@ -166,6 +170,16 @@ export default function ProfileClient({ email, name, image, username, displayNam
   function handlePostItemSave(item: InventoryItem) {
     setItems((prev) => [item, ...prev]);
     setPostLocation(null);
+  }
+
+  function toggleEmailNotifications() {
+    const next = !emailNotificationsEnabled;
+    setEmailNotificationsEnabled(next);
+    fetch('/api/users/me', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ emailNotificationsEnabled: next }),
+    }).catch(() => setEmailNotificationsEnabled(!next));
   }
 
   function removeFromWatchlist(itemId: string) {
@@ -263,12 +277,29 @@ export default function ProfileClient({ email, name, image, username, displayNam
                   <p className="text-sm text-slate-300 leading-relaxed">
                     {meta.bio || <span className="text-slate-600 italic">No bio yet — click Edit to add one</span>}
                   </p>
-                  <button
-                    onClick={() => { setMetaDraft(meta); setPaymentDraftMethods(parsePaymentMethods(meta.paymentDetails)); setEditingMeta(true); }}
-                    className="text-xs text-blue-400 hover:text-blue-300 transition-colors font-medium mt-1"
-                  >
-                    ✏️ Edit profile
-                  </button>
+                  <div className="flex items-center gap-3 mt-1 flex-wrap">
+                    <button
+                      onClick={() => { setMetaDraft(meta); setPaymentDraftMethods(parsePaymentMethods(meta.paymentDetails)); setEditingMeta(true); }}
+                      className="text-xs text-blue-400 hover:text-blue-300 transition-colors font-medium"
+                    >
+                      ✏️ Edit profile
+                    </button>
+                    <button
+                      onClick={toggleEmailNotifications}
+                      className={`inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all ${
+                        emailNotificationsEnabled
+                          ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25'
+                          : 'bg-slate-700/40 border-slate-600/40 text-slate-400 hover:bg-slate-700/70 hover:text-slate-300'
+                      }`}
+                      title={emailNotificationsEnabled ? 'Email notifications are on — click to turn off' : 'Turn on email notifications'}
+                    >
+                      <span>{emailNotificationsEnabled ? '🔔' : '🔕'}</span>
+                      <span>Email notifications {emailNotificationsEnabled ? 'on' : 'off'}</span>
+                      <span className={`w-7 h-4 rounded-full relative flex-shrink-0 transition-colors ${emailNotificationsEnabled ? 'bg-emerald-500' : 'bg-slate-600'}`}>
+                        <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-transform ${emailNotificationsEnabled ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
+                      </span>
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-2 pt-1">

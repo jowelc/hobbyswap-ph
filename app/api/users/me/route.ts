@@ -26,10 +26,11 @@ export async function PATCH(req: NextRequest) {
   const [updated] = await db
     .update(users)
     .set({
-      ...(body.bio            !== undefined && { bio: body.bio }),
-      ...(body.location       !== undefined && { location: body.location }),
-      ...(body.lookingFor     !== undefined && { lookingFor: body.lookingFor }),
-      ...(body.paymentDetails !== undefined && { paymentDetails: body.paymentDetails }),
+      ...(body.bio                         !== undefined && { bio: body.bio }),
+      ...(body.location                    !== undefined && { location: body.location }),
+      ...(body.lookingFor                  !== undefined && { lookingFor: body.lookingFor }),
+      ...(body.paymentDetails              !== undefined && { paymentDetails: body.paymentDetails }),
+      ...(body.emailNotificationsEnabled   !== undefined && { emailNotificationsEnabled: body.emailNotificationsEnabled }),
     })
     .where(eq(users.email, session.user.email))
     .returning();
