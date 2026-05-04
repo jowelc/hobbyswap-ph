@@ -409,7 +409,7 @@ export default function PostItemModal({ onClose, onSave, location, onChangeLocat
                 )}
               </div>
               <div className="flex flex-col items-center gap-1.5">
-                <ImageUpload label="Back" value={backImageUrl} onChange={handleBackImage} />
+                <ImageUpload label="Back" value={backImageUrl} onChange={handleBackImage} optional />
                 {backImageUrl && (
                   <button
                     type="button"
@@ -644,10 +644,12 @@ function ImageUpload({
   label,
   value,
   onChange,
+  optional,
 }: {
   label: string;
   value: string;
   onChange: (url: string, file: File) => void;
+  optional?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -679,6 +681,7 @@ function ImageUpload({
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
             </svg>
             <span className="text-[10px] text-center px-2 leading-tight">Click to upload</span>
+            {optional && <span className="text-[11px] text-center px-2 leading-tight text-blue-400 font-semibold">Optional</span>}
           </div>
         )}
         <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
