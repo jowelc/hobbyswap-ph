@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { auth } from '@/auth';
 import { db } from '@/db';
 import { items, users } from '@/db/schema';
@@ -21,7 +21,26 @@ export async function GET() {
   }
 
   const rows = await db
-    .select()
+    .select({
+      id:                     items.id,
+      userId:                 items.userId,
+      name:                   items.name,
+      category:               items.category,
+      condition:              items.condition,
+      estimatedValue:         items.estimatedValue,
+      location:               items.location,
+      tradePreference:        items.tradePreference,
+      description:            items.description,
+      lookingFor:             items.lookingFor,
+      notes:                  items.notes,
+      cashDifferenceAccepted: items.cashDifferenceAccepted,
+      frontImageUrl:          items.frontImageUrl,
+      backImageUrl:           items.backImageUrl,
+      isForTrade:             items.isForTrade,
+      addedAt:                items.addedAt,
+      tags:                   items.tags,
+      watcherCount:           sql<number>`(select count(*) from watchlist where watchlist.item_id = ${items.id})`.mapWith(Number),
+    })
     .from(items)
     .where(eq(items.userId, user.id))
     .orderBy(items.addedAt);

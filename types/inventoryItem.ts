@@ -21,4 +21,5 @@ export interface InventoryItem {
   isForTrade: boolean;
   addedAt: string;
   tags: string[];
+  watcherCount?: number;
 }

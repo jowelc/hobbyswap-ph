@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { auth } from '@/auth';
 import { SUPERADMIN_EMAIL } from '@/lib/constants';
 import { db } from '@/db';
-import { eq, desc, count } from 'drizzle-orm';
+import { eq, desc, count, sql } from 'drizzle-orm';
 import { users as usersTable, whitelist as whitelistTable, items as itemsTable } from '@/db/schema';
-import type { DbWhitelist, DbItem } from '@/db/schema';
+import type { DbWhitelist } from '@/db/schema';
 import Logo from '@/components/Logo';
 import AddToWhitelistForm from './AddToWhitelistForm';
 import SignOutButton from './SignOutButton';
@@ -65,8 +65,30 @@ export default async function AdminPage() {
 
   const adminUser = allUsers.find((u) => u.email === SUPERADMIN_EMAIL);
 
-  const adminItems: DbItem[] = adminUser
-    ? await db.select().from(itemsTable).where(eq(itemsTable.userId, adminUser.id)).orderBy(desc(itemsTable.addedAt))
+  const adminItems = adminUser
+    ? await db
+        .select({
+          id:                     itemsTable.id,
+          name:                   itemsTable.name,
+          category:               itemsTable.category,
+          condition:              itemsTable.condition,
+          estimatedValue:         itemsTable.estimatedValue,
+          location:               itemsTable.location,
+          tradePreference:        itemsTable.tradePreference,
+          frontImageUrl:          itemsTable.frontImageUrl,
+          backImageUrl:           itemsTable.backImageUrl,
+          description:            itemsTable.description,
+          lookingFor:             itemsTable.lookingFor,
+          notes:                  itemsTable.notes,
+          cashDifferenceAccepted: itemsTable.cashDifferenceAccepted,
+          tags:                   itemsTable.tags,
+          isForTrade:             itemsTable.isForTrade,
+          addedAt:                itemsTable.addedAt,
+          watcherCount:           sql<number>`(select count(*) from watchlist where watchlist.item_id = ${itemsTable.id})`.mapWith(Number),
+        })
+        .from(itemsTable)
+        .where(eq(itemsTable.userId, adminUser.id))
+        .orderBy(desc(itemsTable.addedAt))
     : [];
 
   const totalUsers      = allUsers.length;
@@ -264,6 +286,7 @@ export default async function AdminPage() {
               tags:                   item.tags,
               isForTrade:             item.isForTrade,
               addedAt:                item.addedAt.toISOString(),
+              watcherCount:           item.watcherCount,
             }))}
           />
         </section>

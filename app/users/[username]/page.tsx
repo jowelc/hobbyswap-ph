@@ -72,6 +72,7 @@ function toItemShape(r: Record<string, unknown>, username: string): Item {
     cashDifferenceAccepted: r.cashDifferenceAccepted as boolean,
     tags:                   (r.tags as string[]) || [],
     createdAt:              r.addedAt as string,
+    watcherCount:           (r.watcherCount as number | undefined) ?? 0,
   };
 }
 

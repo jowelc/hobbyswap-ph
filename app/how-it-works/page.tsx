@@ -125,30 +125,13 @@ export default function HowItWorksPage() {
             </p>
           </div>
 
-          {/* Video embed — replace the src with your YouTube embed URL */}
           <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-slate-800 border border-slate-700 shadow-2xl">
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 text-slate-400">
-              {/* Placeholder — swap iframe below when video is ready */}
-              <div className="w-16 h-16 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center">
-                <svg className="w-7 h-7 text-slate-300 ml-1" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              </div>
-              <p className="text-sm font-medium text-slate-400">Tutorial video coming soon</p>
-              <p className="text-xs text-slate-600 max-w-xs text-center">
-                Replace this placeholder with an &lt;iframe&gt; pointing to your YouTube or Vimeo embed URL.
-              </p>
-            </div>
-            {/*
-              When your video is ready, remove the placeholder above and uncomment:
-              <iframe
-                src="https://www.youtube.com/embed/YOUR_VIDEO_ID"
-                title="HobbySwap PH Tutorial"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="absolute inset-0 w-full h-full"
-              />
-            */}
+            <video
+              src="/HobbySwapPH.mp4"
+              controls
+              className="absolute inset-0 w-full h-full object-cover"
+              title="HobbySwap PH Tutorial"
+            />
           </div>
         </section>
 

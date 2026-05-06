@@ -20,7 +20,14 @@ export function searchItems(
 ): Item[] {
   return list.filter((item) => {
     if (category && item.category !== category) return false;
-    if (condition && item.condition !== condition) return false;
+    if (condition) {
+      const nameUpper = item.name.toUpperCase();
+      const conditionMatch = item.condition === condition;
+      const nameMatch =
+        (condition === 'PSA Graded' && nameUpper.includes('PSA')) ||
+        (condition === 'BGS Graded' && nameUpper.includes('BGS'));
+      if (!conditionMatch && !nameMatch) return false;
+    }
     if (tradePreference && item.tradePreference !== tradePreference) return false;
     if (location && item.location !== location) return false;
     if (query) {

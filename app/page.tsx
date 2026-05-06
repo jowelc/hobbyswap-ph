@@ -88,6 +88,7 @@ export default function HomePage() {
           cashDifferenceAccepted: r.cashDifferenceAccepted as boolean,
           tags:                   (r.tags as string[]) || [],
           createdAt:              r.addedAt as string,
+          watcherCount:           (r.watcherCount as number | undefined) ?? 0,
         }));
         setAllItems(mapped);
       })
