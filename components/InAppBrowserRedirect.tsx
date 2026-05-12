@@ -11,6 +11,10 @@ function createAndroidIntentUrl(url: string) {
   return `intent://${path}#Intent;scheme=${parsedUrl.protocol.replace(':', '')};S.browser_fallback_url=${fallbackUrl};end`;
 }
 
+function createChromeIosUrl(url: string) {
+  return `googlechrome://navigate?url=${encodeURIComponent(url)}`;
+}
+
 export default function InAppBrowserRedirect() {
   const { isInAppBrowser } = useInAppBrowser();
   const [showInstructions, setShowInstructions] = useState(false);
@@ -29,11 +33,12 @@ export default function InAppBrowserRedirect() {
       return;
     }
 
-    setShowInstructions(false);
+    setShowInstructions(true);
 
     const currentUrl = window.location.href;
     const userAgent = window.navigator.userAgent;
     const isAndroid = /Android/i.test(userAgent);
+    const isIos = /iPhone|iPad|iPod/i.test(userAgent);
     let pageWasHidden = false;
 
     const markPageHidden = () => {
@@ -63,7 +68,12 @@ export default function InAppBrowserRedirect() {
     }, 1200);
 
     if (isAndroid) {
-      window.location.href = createAndroidIntentUrl(currentUrl);
+      window.location.assign(createAndroidIntentUrl(currentUrl));
+      return;
+    }
+
+    if (isIos) {
+      window.location.assign(createChromeIosUrl(currentUrl));
       return;
     }
 
