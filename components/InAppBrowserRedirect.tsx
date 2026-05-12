@@ -12,7 +12,15 @@ function createAndroidIntentUrl(url: string) {
 }
 
 function createChromeIosUrl(url: string) {
-  return `googlechrome://navigate?url=${encodeURIComponent(url)}`;
+  if (url.startsWith('https://')) {
+    return url.replace(/^https:\/\//i, 'googlechromes://');
+  }
+
+  if (url.startsWith('http://')) {
+    return url.replace(/^http:\/\//i, 'googlechrome://');
+  }
+
+  return url;
 }
 
 export default function InAppBrowserRedirect() {
